@@ -2,11 +2,8 @@ const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('file-input');
 const processBtn = document.getElementById('process-btn');
 const statusSection = document.getElementById('processing-status');
-<<<<<<< HEAD
 const templateSelect = document.getElementById('template-select');
 const resultsSection = document.getElementById('results-section');
-=======
->>>>>>> 6a9b581612307d82b4c1a68e19cc9ebcf61d1f9d
 let selectedFile = null;
 
 // Event Listeners for Drag and Drop
@@ -44,7 +41,6 @@ function updateDropZoneUI() {
     }
 }
 
-<<<<<<< HEAD
 // Processing Logic
 processBtn.addEventListener('click', async () => {
     if (!selectedFile) return;
@@ -129,23 +125,3 @@ function renderResults(data) {
     `;
     resultsSection.classList.remove('hidden');
 }
-=======
-// Processing Mock
-processBtn.addEventListener('click', async () => {
-    statusSection.classList.remove('hidden');
-    // Here you would do actual API calls to FastAPI
-    // const formData = new FormData();
-    // formData.append("file", selectedFile);
-    // fetch("http://localhost:8000/api/process-audio", { method: 'POST', body: formData }) ...
-
-    const steps = document.querySelectorAll('.step');
-    for (let step of steps) {
-        step.style.color = '#818cf8';
-        await new Promise(r => setTimeout(r, 1000));
-        step.style.color = '#f8fafc';
-        step.innerHTML += ' ✅';
-    }
-    
-    alert('Processing complete! Results UI pending backend integration.');
-});
->>>>>>> 6a9b581612307d82b4c1a68e19cc9ebcf61d1f9d
