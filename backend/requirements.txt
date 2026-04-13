@@ -2,8 +2,13 @@ fastapi
 uvicorn
 langgraph
 langchain
+<<<<<<< HEAD
 langchain-groq
 groq
+=======
+langchain-openai
+openai
+>>>>>>> 6a9b581612307d82b4c1a68e19cc9ebcf61d1f9d
 pydantic
 python-dotenv
 python-multipart
