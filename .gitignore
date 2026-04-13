@@ -1,0 +1,42 @@
+# Environment variables (Crucial to keep Groq keys safe)
+.env
+backend/.env
+
+# Python Virtual Environments
+venv/
+env/
+.venv/
+ai-meeting/
+backend/venv/
+backend/.venv/
+
+# Python compiled files / cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+
+# Conda / Jupyter
+.ipynb_checkpoints/
+
+# Node (If you ever add it back)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Specific
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# temporary and audio processing files
+*.tmp
+*.temp
+backend/*.m4a
+backend/*.mp3
+backend/*.wav
