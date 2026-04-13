@@ -26,5 +26,5 @@ We will utilize advanced Speech-to-Text (STT) models, such as OpenAI's Whisper, 
 Business Value
 The AI Meeting Minutes Assistant delivers tangible business value by transforming unstructured conversations into structured, actionable corporate assets. It boosts operational efficiency by automating manual documentation, saving a typical team 3�C5 hours per week of administrative labor. This allows employees to focus on strategic execution rather than rote synthesis. Furthermore, the tool ensures accountability and decision-making accuracy. By leveraging LLM-based intent recognition, it extracts 100% of action items and assignments without human omission, directly reducing project slippage. For organizations in multilingual environments, our optimization for code-switching ensures that critical insights are never lost in translation. This creates a searchable, localized knowledge base that enhances team alignment and provides a high ROI by streamlining the entire meeting-to-action workflow.
 
-It is an interesting idea to generate meeting minutes under code-switching (mixing English and Chinese). It is also a great idea to offer more customizable templates for specific meeting types, such as daily stand-up meetings, brainstorming meetings, etc.
+
 
