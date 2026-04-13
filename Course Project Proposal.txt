@@ -1,0 +1,30 @@
+
+ 
+AI Meeting Minutes Assistant
+ 
+Course Project Proposal
+ 
+ 
+SUN Hanyi     21270270    hsunbk@connect.ust.hk
+GAO Yuan     21252838    ygaodk@connect.ust.hk
+LI Zonghan    21270244         zlilr@connect.ust.hk
+
+ 
+Group 9  
+MAIE 5531
+ 
+March 20, 2025
+
+Problem Statement
+In modern organizations and teams, meetings are frequent and often contain a large amount of information, making it difficult for participants to quickly summarize discussions, key decisions, and action items. Manually recording meeting minutes is time-consuming and prone to omissions, which reduces communication efficiency and delays task execution. Therefore, there is a pressing need for a solution that can generate high-quality meeting summaries efficiently and accurately.
+Objective
+This project aims to develop an AI-based automatic meeting minutes generator. Users can upload meeting recordings or transcripts, and the system will automatically extract key points, generate clear summaries, and list actionable items. The application can significantly improve meeting documentation efficiency, reduce manual workload, and help teams quickly understand and implement meeting decisions.
+Competitors
+While tools like Otter.ai and Fireflies.ai exist, our solution is unique because it is specifically optimized for code-switching (e.g., mixing English and Chinese) and localized accents, which are common in multinational and Asian enterprise environments. Additionally, instead of providing a generic summary, our tool offers highly customizable templates tailored to specific meeting types (e.g., Agile daily stand-ups, client pitches, or academic brainstorms).
+Proposed Solution
+We will utilize advanced Speech-to-Text (STT) models, such as OpenAI's Whisper, for high-accuracy audio transcription that handles multi-language audio. We will then integrate Large Language Models (LLMs) via API to perform entity extraction, summarize discussions, and structure action items. The frontend will be built using a modern web framework (like React) for a seamless user experience, while a Python-based backend will handle audio processing and API requests.
+Business Value
+The AI Meeting Minutes Assistant delivers tangible business value by transforming unstructured conversations into structured, actionable corporate assets. It boosts operational efficiency by automating manual documentation, saving a typical team 3�C5 hours per week of administrative labor. This allows employees to focus on strategic execution rather than rote synthesis. Furthermore, the tool ensures accountability and decision-making accuracy. By leveraging LLM-based intent recognition, it extracts 100% of action items and assignments without human omission, directly reducing project slippage. For organizations in multilingual environments, our optimization for code-switching ensures that critical insights are never lost in translation. This creates a searchable, localized knowledge base that enhances team alignment and provides a high ROI by streamlining the entire meeting-to-action workflow.
+
+It is an interesting idea to generate meeting minutes under code-switching (mixing English and Chinese). It is also a great idea to offer more customizable templates for specific meeting types, such as daily stand-up meetings, brainstorming meetings, etc.
+
