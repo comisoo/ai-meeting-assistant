@@ -4,16 +4,6 @@ AI Meeting Minutes Assistant
  
 Course Project Proposal
  
- 
-SUN Hanyi     21270270    hsunbk@connect.ust.hk
-GAO Yuan     21252838    ygaodk@connect.ust.hk
-LI Zonghan    21270244         zlilr@connect.ust.hk
-
- 
-Group 9  
-MAIE 5531
- 
-March 20, 2025
 
 Problem Statement
 In modern organizations and teams, meetings are frequent and often contain a large amount of information, making it difficult for participants to quickly summarize discussions, key decisions, and action items. Manually recording meeting minutes is time-consuming and prone to omissions, which reduces communication efficiency and delays task execution. Therefore, there is a pressing need for a solution that can generate high-quality meeting summaries efficiently and accurately.
