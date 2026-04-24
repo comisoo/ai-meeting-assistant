@@ -125,7 +125,13 @@ header p,
 .history-item {
     width: 100%;
     display: grid;
-    gap: 4px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.history-open,
+.history-delete {
     text-align: left;
     padding: 14px;
     border-radius: 14px;
@@ -136,10 +142,30 @@ header p,
     transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
-.history-item:hover {
+.history-open:hover,
+.history-delete:hover {
     transform: translateY(-1px);
     border-color: rgba(56, 189, 248, 0.4);
     background: rgba(30, 41, 59, 0.8);
+}
+
+.history-open {
+    width: 100%;
+    display: grid;
+    gap: 4px;
+}
+
+.history-delete {
+    align-self: center;
+    min-width: 88px;
+    text-align: center;
+    border-color: rgba(251, 113, 133, 0.28);
+    background: rgba(127, 29, 29, 0.25);
+}
+
+.history-delete:hover {
+    border-color: rgba(251, 113, 133, 0.48);
+    background: rgba(153, 27, 27, 0.4);
 }
 
 .history-title {
@@ -417,6 +443,10 @@ select {
     .panel-head {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .history-item {
+        grid-template-columns: 1fr;
     }
 
     .speaker-head {

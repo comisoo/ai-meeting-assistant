@@ -155,3 +155,13 @@ def get_meeting(meeting_id: int) -> Optional[Dict[str, Any]]:
     if row is None:
         return None
     return normalize_row(row)
+
+
+def delete_meeting(meeting_id: int) -> bool:
+    with get_connection() as connection:
+        cursor = connection.execute(
+            "DELETE FROM meetings WHERE id = ?",
+            (meeting_id,),
+        )
+        connection.commit()
+    return cursor.rowcount > 0

@@ -1,6 +1,5 @@
 import os
 from functools import lru_cache
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
@@ -23,22 +22,12 @@ def get_diarization_config() -> Dict[str, Any]:
     huggingface_token = os.environ.get("HUGGINGFACE_TOKEN", "").strip()
     pyannoteai_api_key = os.environ.get("PYANNOTEAI_API_KEY", "").strip()
     configured_backend = os.environ.get("DIARIZATION_BACKEND", "").strip().lower()
-    local_model_path = os.environ.get("DIARIZATION_LOCAL_PATH", "").strip()
 
     if huggingface_token in PLACEHOLDER_VALUES:
         huggingface_token = ""
 
     if pyannoteai_api_key in PLACEHOLDER_VALUES:
         pyannoteai_api_key = ""
-
-    if local_model_path:
-        return {
-            "enabled": True,
-            "backend": "local-directory",
-            "model": local_model_path,
-            "token": None,
-            "device": os.environ.get("DIARIZATION_DEVICE", "auto"),
-        }
 
     if configured_backend == "precision-2":
         return {
@@ -115,16 +104,7 @@ def get_diarization_pipeline():
             "pyannote.audio is not installed. Install dependencies from requirements.txt."
         ) from exc
 
-    model_reference = config["model"]
-    if config["backend"] == "local-directory":
-        model_path = Path(model_reference).expanduser()
-        if not model_path.exists():
-            raise RuntimeError(
-                f"Local diarization model directory was not found: {model_path}"
-            )
-        model_reference = str(model_path)
-
-    pipeline = Pipeline.from_pretrained(model_reference, token=config["token"])
+    pipeline = Pipeline.from_pretrained(config["model"], token=config["token"])
 
     if config["backend"] != "precision-2" and config["device"] != "cloud":
         try:

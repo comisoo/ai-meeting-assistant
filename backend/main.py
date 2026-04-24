@@ -12,7 +12,7 @@ from groq import Groq
 
 from app.agents.workflow import app_workflow
 from app.diarization import diarize_audio, get_diarization_config, is_diarization_enabled
-from app.storage import get_meeting, init_db, list_meetings, save_meeting
+from app.storage import delete_meeting, get_meeting, init_db, list_meetings, save_meeting
 
 load_dotenv()
 
@@ -316,6 +316,14 @@ def get_meeting_detail(meeting_id: int):
     if meeting is None:
         raise HTTPException(status_code=404, detail="Meeting not found.")
     return meeting
+
+
+@app.delete("/api/meetings/{meeting_id}")
+def delete_meeting_detail(meeting_id: int):
+    deleted = delete_meeting(meeting_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Meeting not found.")
+    return {"deleted": True, "meeting_id": meeting_id}
 
 
 @app.post("/api/process-audio")

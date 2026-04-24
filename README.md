@@ -67,9 +67,6 @@ GROQ_FALLBACK_MODELS=llama-3.3-70b-versatile
 # Speaker diarization options
 DIARIZATION_ENABLED=1
 
-# Optional offline local model directory
-# DIARIZATION_LOCAL_PATH=C:\models\speaker-diarization-community-1
-
 # Choose one of the following token paths:
 HUGGINGFACE_TOKEN=your_huggingface_token
 # or
@@ -85,24 +82,9 @@ DIARIZATION_BACKEND=community-1
 ```
 
 Notes:
-- If `DIARIZATION_LOCAL_PATH` is set, the backend loads the diarization model from that local directory first and does not need to download from Hugging Face at runtime.
 - `community-1` uses local `pyannote.audio` inference and requires a Hugging Face token with access to the model.
 - `precision-2` uses the pyannote hosted backend and requires a pyannoteAI API key.
 - For local diarization, `ffmpeg` and the PyTorch stack must be available in your environment.
-
-## Offline Local Model
-
-If Hugging Face connectivity is unreliable, you can download the diarization model once and point the backend to a local folder.
-
-Example:
-
-```env
-DIARIZATION_ENABLED=1
-DIARIZATION_LOCAL_PATH=C:\models\speaker-diarization-community-1
-DIARIZATION_DEVICE=auto
-```
-
-Then keep `DIARIZATION_BACKEND=community-1` or omit it entirely. The backend will prefer the local directory whenever `DIARIZATION_LOCAL_PATH` is set.
 
 ## API Highlights
 

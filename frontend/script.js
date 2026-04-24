@@ -13,6 +13,7 @@ const historyList = document.getElementById("history-list");
 const refreshHistoryBtn = document.getElementById("refresh-history-btn");
 
 let selectedFile = null;
+let currentMeetingId = null;
 
 dropZone.addEventListener("click", () => fileInput.click());
 refreshHistoryBtn.addEventListener("click", () => loadHistory());
@@ -126,18 +127,30 @@ async function loadHistory() {
         historyList.innerHTML = meetings
             .map(
                 (meeting) => `
-                    <button class="history-item" type="button" data-meeting-id="${meeting.id}">
-                        <span class="history-title">${escapeHtml(meeting.filename)}</span>
-                        <span class="history-meta">${escapeHtml(meeting.template)} | ${escapeHtml(formatDateTime(meeting.created_at))}</span>
-                    </button>
+                    <article class="history-item">
+                        <button class="history-open" type="button" data-meeting-id="${meeting.id}">
+                            <span class="history-title">${escapeHtml(meeting.filename)}</span>
+                            <span class="history-meta">${escapeHtml(meeting.template)} | ${escapeHtml(formatDateTime(meeting.created_at))}</span>
+                        </button>
+                        <button class="history-delete" type="button" data-meeting-id="${meeting.id}" aria-label="Delete saved meeting">
+                            Delete
+                        </button>
+                    </article>
                 `
             )
             .join("");
 
-        document.querySelectorAll(".history-item").forEach((button) => {
+        document.querySelectorAll(".history-open").forEach((button) => {
             button.addEventListener("click", () => {
                 const meetingId = button.dataset.meetingId;
                 loadMeetingDetail(meetingId);
+            });
+        });
+
+        document.querySelectorAll(".history-delete").forEach((button) => {
+            button.addEventListener("click", async () => {
+                const meetingId = button.dataset.meetingId;
+                await deleteMeeting(meetingId);
             });
         });
     } catch (error) {
@@ -152,7 +165,35 @@ async function loadMeetingDetail(meetingId) {
             throw new Error("Failed to load the selected meeting.");
         }
         const meeting = await response.json();
+        currentMeetingId = String(meeting.id || meetingId);
         renderResults(meeting);
+    } catch (error) {
+        alert(`Error: ${error.message}`);
+    }
+}
+
+async function deleteMeeting(meetingId) {
+    const confirmed = window.confirm("Delete this saved meeting record?");
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${HISTORY_URL}/${meetingId}`, {
+            method: "DELETE",
+        });
+        if (!response.ok) {
+            const errorPayload = await response.json();
+            throw new Error(errorPayload.detail || "Failed to delete meeting.");
+        }
+
+        if (currentMeetingId === String(meetingId)) {
+            currentMeetingId = null;
+            resultsSection.innerHTML = "";
+            resultsSection.classList.add("hidden");
+        }
+
+        await loadHistory();
     } catch (error) {
         alert(`Error: ${error.message}`);
     }
@@ -216,6 +257,7 @@ processBtn.addEventListener("click", async () => {
         const data = await response.json();
         markStep(steps, 4, "complete");
         advanceProgress(100);
+        currentMeetingId = String(data.id || "");
         renderResults(data);
         loadHistory();
     } catch (error) {
