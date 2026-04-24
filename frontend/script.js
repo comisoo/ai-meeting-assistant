@@ -1,127 +1,368 @@
-const dropZone = document.getElementById('drop-zone');
-const fileInput = document.getElementById('file-input');
-const processBtn = document.getElementById('process-btn');
-const statusSection = document.getElementById('processing-status');
-const templateSelect = document.getElementById('template-select');
-const resultsSection = document.getElementById('results-section');
+const API_BASE_URL = "http://localhost:8000";
+const API_URL = `${API_BASE_URL}/api/process-audio`;
+const HISTORY_URL = `${API_BASE_URL}/api/meetings`;
+
+const dropZone = document.getElementById("drop-zone");
+const fileInput = document.getElementById("file-input");
+const processBtn = document.getElementById("process-btn");
+const statusSection = document.getElementById("processing-status");
+const templateSelect = document.getElementById("template-select");
+const resultsSection = document.getElementById("results-section");
+const statusFill = document.querySelector(".fill");
+const historyList = document.getElementById("history-list");
+const refreshHistoryBtn = document.getElementById("refresh-history-btn");
+
 let selectedFile = null;
 
-// Event Listeners for Drag and Drop
-dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener("click", () => fileInput.click());
+refreshHistoryBtn.addEventListener("click", () => loadHistory());
 
-dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
+dropZone.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    dropZone.classList.add("dragover");
 });
 
-dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('dragover');
+dropZone.addEventListener("dragleave", () => {
+    dropZone.classList.remove("dragover");
 });
 
-dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    if (e.dataTransfer.files.length) {
-        selectedFile = e.dataTransfer.files[0];
+dropZone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    dropZone.classList.remove("dragover");
+    if (event.dataTransfer.files.length > 0) {
+        selectedFile = event.dataTransfer.files[0];
         updateDropZoneUI();
     }
 });
 
-fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length) {
-        selectedFile = e.target.files[0];
+fileInput.addEventListener("change", (event) => {
+    if (event.target.files.length > 0) {
+        selectedFile = event.target.files[0];
         updateDropZoneUI();
     }
 });
 
 function updateDropZoneUI() {
-    if (selectedFile) {
-        dropZone.innerHTML = `<div class="icon">✅</div><p>${selectedFile.name}</p>`;
-        processBtn.disabled = false;
+    if (!selectedFile) {
+        return;
+    }
+
+    dropZone.innerHTML = `
+        <div class="icon">Ready</div>
+        <p>${selectedFile.name}</p>
+        <p class="subtitle">Template: ${templateSelect.options[templateSelect.selectedIndex].text}</p>
+    `;
+    processBtn.disabled = false;
+}
+
+function resetSteps() {
+    const steps = document.querySelectorAll(".step");
+    steps.forEach((step) => {
+        step.classList.remove("active", "complete", "error");
+    });
+    statusFill.style.width = "10%";
+    return steps;
+}
+
+function markStep(steps, index, status) {
+    const step = steps[index];
+    if (!step) {
+        return;
+    }
+    step.classList.remove("active", "complete", "error");
+    step.classList.add(status);
+}
+
+function advanceProgress(percent) {
+    statusFill.style.width = `${percent}%`;
+}
+
+function formatDateTime(value) {
+    if (!value) {
+        return "Unknown time";
+    }
+    const date = new Date(value.replace(" ", "T"));
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+    return date.toLocaleString();
+}
+
+function escapeHtml(value) {
+    return (value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+}
+
+function formatSeconds(value) {
+    if (typeof value !== "number" || Number.isNaN(value)) {
+        return "";
+    }
+    const totalSeconds = Math.max(0, Math.floor(value));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+async function loadHistory() {
+    historyList.innerHTML = `<p class="muted">Loading saved meetings...</p>`;
+
+    try {
+        const response = await fetch(`${HISTORY_URL}?limit=12`);
+        if (!response.ok) {
+            throw new Error("Failed to load meeting history.");
+        }
+
+        const payload = await response.json();
+        const meetings = payload.meetings || [];
+
+        if (meetings.length === 0) {
+            historyList.innerHTML = `<p class="muted">No meetings saved yet.</p>`;
+            return;
+        }
+
+        historyList.innerHTML = meetings
+            .map(
+                (meeting) => `
+                    <button class="history-item" type="button" data-meeting-id="${meeting.id}">
+                        <span class="history-title">${escapeHtml(meeting.filename)}</span>
+                        <span class="history-meta">${escapeHtml(meeting.template)} | ${escapeHtml(formatDateTime(meeting.created_at))}</span>
+                    </button>
+                `
+            )
+            .join("");
+
+        document.querySelectorAll(".history-item").forEach((button) => {
+            button.addEventListener("click", () => {
+                const meetingId = button.dataset.meetingId;
+                loadMeetingDetail(meetingId);
+            });
+        });
+    } catch (error) {
+        historyList.innerHTML = `<p class="muted">Unable to load history. ${escapeHtml(error.message)}</p>`;
     }
 }
 
-// Processing Logic
-processBtn.addEventListener('click', async () => {
-    if (!selectedFile) return;
+async function loadMeetingDetail(meetingId) {
+    try {
+        const response = await fetch(`${HISTORY_URL}/${meetingId}`);
+        if (!response.ok) {
+            throw new Error("Failed to load the selected meeting.");
+        }
+        const meeting = await response.json();
+        renderResults(meeting);
+    } catch (error) {
+        alert(`Error: ${error.message}`);
+    }
+}
 
-    statusSection.classList.remove('hidden');
-    resultsSection.innerHTML = ''; // reset previous
-    resultsSection.classList.add('hidden');
+processBtn.addEventListener("click", async () => {
+    if (!selectedFile) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("template", templateSelect.value);
+
+    statusSection.classList.remove("hidden");
+    resultsSection.classList.add("hidden");
+    resultsSection.innerHTML = "";
     processBtn.disabled = true;
 
-    const steps = document.querySelectorAll('.step');
-    steps.forEach(step => {
-        step.style.color = '#818cf8';
-        step.innerHTML = step.innerHTML.replace(' ✅', '').replace(' ❌', '').replace(' (Pending)', '');
-    });
+    const steps = resetSteps();
+    markStep(steps, 0, "active");
+    advanceProgress(18);
 
     try {
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-        formData.append("template", templateSelect.value);
-
-        steps[0].style.color = '#f8fafc';
-        steps[0].innerHTML += ' (Pending)';
-
-        const response = await fetch("http://localhost:8000/api/process-audio", {
-            method: 'POST',
-            body: formData
+        const responsePromise = fetch(API_URL, {
+            method: "POST",
+            body: formData,
         });
 
-        steps.forEach(step => {
-            step.style.color = '#f8fafc';
-            if(!step.innerHTML.includes('✅')) step.innerHTML = step.innerHTML.split(' (')[0] + ' ✅';
-        });
+        window.setTimeout(() => {
+            markStep(steps, 0, "complete");
+            markStep(steps, 1, "active");
+            advanceProgress(36);
+        }, 300);
+
+        window.setTimeout(() => {
+            markStep(steps, 1, "complete");
+            markStep(steps, 2, "active");
+            advanceProgress(58);
+        }, 900);
+
+        window.setTimeout(() => {
+            markStep(steps, 2, "complete");
+            markStep(steps, 3, "active");
+            advanceProgress(78);
+        }, 1500);
+
+        window.setTimeout(() => {
+            markStep(steps, 3, "complete");
+            markStep(steps, 4, "active");
+            advanceProgress(92);
+        }, 2100);
+
+        const response = await responsePromise;
 
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || 'Server error occurred');
+            const errorPayload = await response.json();
+            throw new Error(errorPayload.detail || "Server error occurred");
         }
 
         const data = await response.json();
+        markStep(steps, 4, "complete");
+        advanceProgress(100);
         renderResults(data);
-
+        loadHistory();
     } catch (error) {
         console.error(error);
-        alert(`Error: ${error.message}`);
-        steps.forEach(step => {
-            step.style.color = '#f87171'; // red
+        document.querySelectorAll(".step").forEach((step) => {
+            if (!step.classList.contains("complete")) {
+                step.classList.add("error");
+            }
         });
+        alert(`Error: ${error.message}`);
     } finally {
         processBtn.disabled = false;
     }
 });
 
-function renderResults(data) {
-    const summaryHTML = marked.parse(data.summary || 'No summary generated.');
-    
-    let actionItemsHTML = '';
-    if (data.action_items && data.action_items.length > 0) {
-        actionItemsHTML = data.action_items.map(item => `
-            <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid rgba(255,255,255,0.1);">
-                <strong>Task:</strong> ${item.task} <br/>
-                <span style="color: #c084fc;">👤 Assignee: ${item.assignee}</span> | 
-                <span style="color: #fb923c;">🗓 Deadline: ${item.deadline}</span>
-            </div>
-        `).join('');
-    } else {
-        actionItemsHTML = '<p style="color: #94a3b8;">No specific action items found.</p>';
+function renderList(items, emptyText) {
+    if (!items || items.length === 0) {
+        return `<p class="muted">${emptyText}</p>`;
     }
 
-    resultsSection.innerHTML = `
-        <div class="glass-panel" style="text-align: left;">
-            <h2 style="margin-top: 0; color: #c084fc; font-weight: 600;">📝 Meeting Summary</h2>
-            <div style="line-height: 1.6;">${summaryHTML}</div>
-            
-            <h2 style="color: #818cf8; margin-top: 2rem; font-weight: 600;">🎯 Action Items</h2>
-            ${actionItemsHTML}
+    return `
+        <ul class="bullet-list">
+            ${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+        </ul>
+    `;
+}
 
-            <h3 style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; font-size: 1rem; color: #94a3b8; cursor: pointer;" onclick="document.getElementById('raw-transcript').classList.toggle('hidden')">
-                (Click to Toggle) View Code-Switched Cleaned Transcript
-            </h3>
-            <div id="raw-transcript" class="hidden" style="white-space: pre-wrap; font-size: 0.9em; line-height: 1.5; color: #cbd5e1; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; margin-top: 0.5rem;">${data.cleaned_transcript}</div>
+function renderActionItems(actionItems) {
+    if (!actionItems || actionItems.length === 0) {
+        return `<p class="muted">No specific action items found.</p>`;
+    }
+
+    return actionItems
+        .map(
+            (item) => `
+                <article class="action-card">
+                    <h3>${escapeHtml(item.task)}</h3>
+                    <p><strong>Owner:</strong> ${escapeHtml(item.assignee)}</p>
+                    <p><strong>Deadline:</strong> ${escapeHtml(item.deadline)}</p>
+                </article>
+            `
+        )
+        .join("");
+}
+
+function renderSpeakerSegments(segments, status) {
+    if (!segments || segments.length === 0) {
+        const statusMessages = {
+            disabled: "Speaker diarization is disabled for this deployment.",
+            unconfigured: "Speaker diarization is not configured yet. Add the required tokens to enable it.",
+            not_available: "Speaker parsing is not available for this meeting.",
+            text_input: "Speaker diarization is only available for uploaded audio files.",
+            error: "Speaker diarization encountered an error. Check the backend token and pyannote setup.",
+        };
+        const message = statusMessages[status] || "No speaker turns were detected in this meeting.";
+        return `<p class="muted">${message}</p>`;
+    }
+
+    return segments
+        .map(
+            (segment) => `
+                <article class="speaker-card">
+                    <div class="speaker-head">
+                        <p class="speaker-name">${escapeHtml(segment.speaker_label || segment.speaker)}</p>
+                        <span class="history-meta">${escapeHtml(formatSeconds(segment.start))} - ${escapeHtml(formatSeconds(segment.end))}</span>
+                    </div>
+                    <p>${escapeHtml(segment.text)}</p>
+                </article>
+            `
+        )
+        .join("");
+}
+
+function renderResults(data) {
+    const summaryHTML = marked.parse(data.summary || "No summary generated.");
+    const followUpHTML = marked.parse(data.follow_up || "No follow-up generated.");
+    const insights = data.insights || {};
+    const transcriptText = data.cleaned_transcript || data.speaker_aware_transcript || data.transcript || "";
+
+    resultsSection.innerHTML = `
+        <div class="results-grid">
+            <section class="glass-panel result-card wide">
+                <div class="panel-head compact">
+                    <div>
+                        <p class="eyebrow">Summary</p>
+                        <h2>${escapeHtml(data.filename || "Meeting Output")}</h2>
+                    </div>
+                    <span class="history-meta">${escapeHtml(data.template || "general")} | ${escapeHtml(formatDateTime(data.created_at))}</span>
+                </div>
+                <div class="markdown-body">${summaryHTML}</div>
+            </section>
+
+            <section class="glass-panel result-card">
+                <p class="eyebrow">Action Items</p>
+                <div class="stack">${renderActionItems(data.action_items || [])}</div>
+            </section>
+
+            <section class="glass-panel result-card">
+                <p class="eyebrow">Meeting Insights</p>
+                <div class="insight-block">
+                    <p><strong>Tone:</strong> ${escapeHtml(insights.meeting_tone || "Unavailable")}</p>
+                    <div>
+                        <strong>Key Decisions</strong>
+                        ${renderList(insights.key_decisions, "No decisions captured.")}
+                    </div>
+                    <div>
+                        <strong>Blockers</strong>
+                        ${renderList(insights.blockers, "No blockers captured.")}
+                    </div>
+                    <div>
+                        <strong>Next Focus</strong>
+                        ${renderList(insights.next_focus, "No next-focus items captured.")}
+                    </div>
+                </div>
+            </section>
+
+            <section class="glass-panel result-card wide">
+                <p class="eyebrow">Follow-up Plan</p>
+                <div class="markdown-body">${followUpHTML}</div>
+            </section>
+
+            <section class="glass-panel result-card">
+                <p class="eyebrow">Speaker Turns</p>
+                <p class="muted">Diarization: ${escapeHtml(data.diarization_status || "not_available")} (${escapeHtml(data.diarization_backend || "none")})</p>
+                ${data.diarization_error ? `<p class="muted">Detail: ${escapeHtml(data.diarization_error)}</p>` : ""}
+                <div class="stack">
+                    ${renderSpeakerSegments(data.speaker_segments || [], data.diarization_status)}
+                </div>
+            </section>
+
+            <section class="glass-panel result-card">
+                <p class="eyebrow">Transcript</p>
+                <button id="toggle-transcript-btn" class="secondary-btn" type="button">
+                    Toggle Cleaned Transcript
+                </button>
+                <div id="raw-transcript" class="transcript hidden">${escapeHtml(transcriptText)}</div>
+            </section>
         </div>
     `;
-    resultsSection.classList.remove('hidden');
+
+    const transcriptBtn = document.getElementById("toggle-transcript-btn");
+    const transcriptPanel = document.getElementById("raw-transcript");
+    transcriptBtn.addEventListener("click", () => {
+        transcriptPanel.classList.toggle("hidden");
+    });
+
+    resultsSection.classList.remove("hidden");
 }
+
+loadHistory();

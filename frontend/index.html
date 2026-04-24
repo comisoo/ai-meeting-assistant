@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Meeting Minutes Assistant</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,42 +12,62 @@
     <main class="container">
         <header>
             <h1>AI Meeting Minutes <span class="gradient-text">Assistant</span></h1>
-            <p>Transform unstructured conversations into structured corporate assets.</p>
+            <p>Transform raw meetings into summaries, action items, insights, follow-up plans, and reusable meeting history.</p>
         </header>
 
-        <section class="upload-section glass-panel">
-            <div id="drop-zone" class="drop-zone">
-                <div class="icon">📁</div>
-                <p>Drag & drop your meeting audio/transcript here</p>
-                <p class="subtitle">or click to browse files</p>
-                <input type="file" id="file-input" hidden accept="audio/*,.txt,.pdf,.docx">
-            </div>
-            
-            <div class="options">
-                <label for="template-select">Meeting Template:</label>
-                <select id="template-select">
-                    <option value="daily">Agile Daily Stand-up</option>
-                    <option value="brainstorm">Brainstorming Session</option>
-                    <option value="client">Client Pitch</option>
-                    <option value="general" selected>General Meeting</option>
-                </select>
-                <button id="process-btn" class="primary-btn" disabled>Generate Minutes</button>
-            </div>
-        </section>
+        <div class="layout-grid">
+            <section class="glass-panel history-panel">
+                <div class="panel-head">
+                    <div>
+                        <p class="eyebrow">Meeting History</p>
+                        <h2>Recent Sessions</h2>
+                    </div>
+                    <button id="refresh-history-btn" class="secondary-btn" type="button">Refresh</button>
+                </div>
+                <div id="history-list" class="history-list">
+                    <p class="muted">No meetings saved yet.</p>
+                </div>
+            </section>
 
-        <section id="processing-status" class="processing-status hidden glass-panel mt-2">
-            <div class="status-steps">
-                <div class="step" id="step-upload">Uploading...</div>
-                <div class="step" id="step-transcribe">Transcription (Whisper)</div>
-                <div class="step" id="step-summarize">Summarizing (LangGraph)</div>
-                <div class="step" id="step-extract">Extracting Action Items</div>
-            </div>
-            <div class="loader-bar"><div class="fill"></div></div>
-        </section>
+            <section class="workspace">
+                <section class="upload-section glass-panel">
+                    <div id="drop-zone" class="drop-zone">
+                        <div class="icon">Upload</div>
+                        <p>Drag and drop a meeting audio file or transcript</p>
+                        <p class="subtitle">Supported formats: audio files and .txt transcripts</p>
+                        <input type="file" id="file-input" hidden accept="audio/*,.txt">
+                    </div>
 
-        <!-- Results Section -->
-        <section id="results-section" class="hidden mt-2"></section>
+                    <div class="options">
+                        <label for="template-select">Meeting Template</label>
+                        <select id="template-select">
+                            <option value="daily">Agile Daily Stand-up</option>
+                            <option value="brainstorm">Brainstorming Session</option>
+                            <option value="client">Client Pitch</option>
+                            <option value="general" selected>General Meeting</option>
+                        </select>
+                        <button id="process-btn" class="primary-btn" disabled>Generate Minutes</button>
+                    </div>
+                </section>
+
+                <section id="processing-status" class="processing-status hidden glass-panel mt-2">
+                    <div class="status-steps">
+                        <div class="step" id="step-upload">1. Uploading input</div>
+                        <div class="step" id="step-clean">2. Cleaning transcript</div>
+                        <div class="step" id="step-summary">3. Generating summary</div>
+                        <div class="step" id="step-action">4. Extracting action items</div>
+                        <div class="step" id="step-insight">5. Building insights and follow-up</div>
+                    </div>
+                    <div class="loader-bar">
+                        <div class="fill"></div>
+                    </div>
+                </section>
+
+                <section id="results-section" class="hidden mt-2"></section>
+            </section>
+        </div>
     </main>
+
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="script.js"></script>
 </body>

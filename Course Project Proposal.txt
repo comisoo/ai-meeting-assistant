@@ -1,20 +1,46 @@
-
- 
 AI Meeting Minutes Assistant
- 
+
 Course Project Proposal
- 
 
 Problem Statement
-In modern organizations and teams, meetings are frequent and often contain a large amount of information, making it difficult for participants to quickly summarize discussions, key decisions, and action items. Manually recording meeting minutes is time-consuming and prone to omissions, which reduces communication efficiency and delays task execution. Therefore, there is a pressing need for a solution that can generate high-quality meeting summaries efficiently and accurately.
+In modern organizations, meetings generate a large amount of unstructured information, including discussion points, decisions, deadlines, and follow-up tasks. Manually turning these conversations into high-quality meeting minutes is slow, repetitive, and error-prone. Important details are often missed, especially in multilingual environments where speakers switch between English and Chinese or use domain-specific jargon. As a result, teams may lose alignment, delay execution, or duplicate work. There is a strong need for a system that can automatically convert raw meeting content into structured, actionable minutes with higher consistency and lower human effort.
+
 Objective
-This project aims to develop an AI-based automatic meeting minutes generator. Users can upload meeting recordings or transcripts, and the system will automatically extract key points, generate clear summaries, and list actionable items. The application can significantly improve meeting documentation efficiency, reduce manual workload, and help teams quickly understand and implement meeting decisions.
+This project aims to develop an AI-based Meeting Minutes Assistant that can accept meeting recordings or transcripts and automatically generate structured meeting outputs. The system will transcribe or clean the input, summarize the discussion, and extract action items such as tasks, owners, and deadlines. Beyond simple summarization, the project aims to demonstrate how a multi-agent AI workflow can decompose a complex meeting-understanding task into specialized subtasks, improving modularity, interpretability, and future extensibility.
+
 Competitors
-While tools like Otter.ai and Fireflies.ai exist, our solution is unique because it is specifically optimized for code-switching (e.g., mixing English and Chinese) and localized accents, which are common in multinational and Asian enterprise environments. Additionally, instead of providing a generic summary, our tool offers highly customizable templates tailored to specific meeting types (e.g., Agile daily stand-ups, client pitches, or academic brainstorms).
+Existing tools such as Otter.ai, Fireflies.ai, and other AI note-taking products already support meeting transcription and summary generation. However, most of them focus on general English meeting scenarios and provide relatively fixed output formats. Our solution is differentiated in two ways. First, it is specifically designed for code-switching settings, such as English-Chinese mixed speech and localized accents, which are common in multinational teams and Asian workplaces. Second, inspired by recent multi-agent meeting assistant designs, our system emphasizes modular AI collaboration rather than a single monolithic prompt, allowing different stages of the workflow to handle transcript cleaning, summarization, and structured action-item extraction more explicitly.
+
 Proposed Solution
-We will utilize advanced Speech-to-Text (STT) models, such as OpenAI's Whisper, for high-accuracy audio transcription that handles multi-language audio. We will then integrate Large Language Models (LLMs) via API to perform entity extraction, summarize discussions, and structure action items. The frontend will be built using a modern web framework (like React) for a seamless user experience, while a Python-based backend will handle audio processing and API requests.
+We propose a lightweight client-server system powered by a multi-agent backend pipeline. Users will upload an audio file or transcript through a web interface. The backend will first process the input using a Speech-to-Text model for multilingual transcription. The resulting transcript will then be passed through a set of specialized AI stages. A transcript-cleaning agent will normalize code-switched text and correct obvious recognition artifacts. A summarization agent will generate structured meeting minutes according to the selected meeting template. An action-item extraction agent will identify tasks, assignees, and deadlines in a machine-readable format. This staged design is inspired by open-source multi-agent meeting assistant projects, which show that complex meeting analysis is more reliable when broken into smaller reasoning units.
+
+The frontend will be kept simple and responsive using HTML, CSS, and JavaScript, while the backend will be implemented in Python with FastAPI. For workflow orchestration, we will use LangGraph so that the meeting-understanding process is represented as an explicit graph of states and agent nodes. This architecture also leaves room for future extensions such as speaker diarization, insight extraction, or follow-up email generation.
+
+Technical Approach
+The proposed system follows a decoupled architecture with three core layers:
+
+1. Input Processing Layer
+Uploaded audio will be transcribed using a modern Speech-to-Text model such as Whisper. Text transcripts may also be uploaded directly. The system will support multilingual input and prioritize robustness in code-switching scenarios.
+
+2. Multi-Agent Reasoning Layer
+Instead of relying on a single prompt to perform all tasks, we will decompose the workflow into specialized agents. The initial version will include:
+- a Transcription/Cleaning Agent to normalize raw transcript content,
+- a Summarization Agent to generate structured minutes,
+- an Action Item Agent to extract tasks, assignees, and deadlines.
+
+This design is inspired by recent multi-agent meeting assistant implementations, where task decomposition improves maintainability and allows different prompts or models to be optimized for different subtasks.
+
+3. Presentation Layer
+The frontend will display upload status, processing progress, and final outputs in a structured and readable format. Meeting templates such as general meetings, brainstorming sessions, or Agile stand-ups will allow the user to select different summary styles.
+
 Business Value
-The AI Meeting Minutes Assistant delivers tangible business value by transforming unstructured conversations into structured, actionable corporate assets. It boosts operational efficiency by automating manual documentation, saving a typical team 3�C5 hours per week of administrative labor. This allows employees to focus on strategic execution rather than rote synthesis. Furthermore, the tool ensures accountability and decision-making accuracy. By leveraging LLM-based intent recognition, it extracts 100% of action items and assignments without human omission, directly reducing project slippage. For organizations in multilingual environments, our optimization for code-switching ensures that critical insights are never lost in translation. This creates a searchable, localized knowledge base that enhances team alignment and provides a high ROI by streamlining the entire meeting-to-action workflow.
+The AI Meeting Minutes Assistant transforms unstructured conversations into structured organizational knowledge. It creates value in several ways. First, it improves efficiency by reducing the manual effort required to write and distribute meeting minutes. Second, it improves accountability by explicitly extracting action items, owners, and deadlines. Third, it is especially useful in multilingual workplaces, where code-switching often reduces the quality of standard meeting transcription tools. Finally, by adopting a modular multi-agent architecture, the system is not only a useful productivity tool but also a technically meaningful demonstration of how AI workflows can be engineered for real business scenarios rather than limited to single-step text generation.
 
+Expected Contributions
+This project is expected to contribute both practically and technically. Practically, it will provide a working prototype that helps users document meetings more effectively. Technically, it will demonstrate:
+- the integration of speech recognition and LLM-based meeting understanding,
+- the use of multi-agent workflow orchestration for a real-world application,
+- structured information extraction from noisy conversational data,
+- support for code-switched and multilingual meeting environments.
 
-
+In later stages, the system can be extended with richer capabilities such as speaker-aware summaries, searchable meeting archives, follow-up email drafts, and team-level knowledge management.
