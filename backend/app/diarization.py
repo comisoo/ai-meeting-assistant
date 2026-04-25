@@ -2,6 +2,9 @@ import os
 from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
+from app.env import load_app_env
+
+load_app_env()
 
 DEFAULT_LOCAL_MODEL = "pyannote/speaker-diarization-community-1"
 DEFAULT_CLOUD_MODEL = "pyannote/speaker-diarization-precision-2"
@@ -91,6 +94,52 @@ def get_speaker_constraints() -> Dict[str, Optional[int]]:
     }
 
 
+def describe_model_load_error(exc: Exception, config: Dict[str, Any]) -> str:
+    message = str(exc)
+    lowered = message.lower()
+    model = config.get("model") or "the configured diarization model"
+
+    if "cannot find the requested files in the local cache" in lowered:
+        return (
+            f"Unable to download {model} from Hugging Face. Check network access to "
+            "huggingface.co, accept the model terms, and verify HUGGINGFACE_TOKEN."
+        )
+
+    if any(
+        token in lowered
+        for token in (
+            "winerror 10061",
+            "actively refused",
+            "actively refused it",
+            "cannot send a request, as the client has been closed",
+            "connection refused",
+            "connecterror",
+        )
+    ):
+        return (
+            f"Unable to connect to Hugging Face while loading {model}. "
+            "Check whether this machine can reach https://huggingface.co "
+            "(VPN/proxy/firewall), then retry."
+        )
+
+    if any(
+        token in lowered
+        for token in ("401", "403", "gated repo", "access to model", "unauthorized")
+    ):
+        return (
+            f"Access to {model} was denied. Verify that HUGGINGFACE_TOKEN is valid and "
+            "that the account accepted the pyannote model terms on Hugging Face."
+        )
+
+    if "repository not found" in lowered or "revision not found" in lowered:
+        return (
+            f"The diarization model '{model}' could not be found on Hugging Face. "
+            "Check DIARIZATION_MODEL and DIARIZATION_BACKEND."
+        )
+
+    return f"Failed to load diarization model '{model}': {message}"
+
+
 @lru_cache(maxsize=1)
 def get_diarization_pipeline():
     config = get_diarization_config()
@@ -104,7 +153,10 @@ def get_diarization_pipeline():
             "pyannote.audio is not installed. Install dependencies from requirements.txt."
         ) from exc
 
-    pipeline = Pipeline.from_pretrained(config["model"], token=config["token"])
+    try:
+        pipeline = Pipeline.from_pretrained(config["model"], token=config["token"])
+    except Exception as exc:
+        raise RuntimeError(describe_model_load_error(exc, config)) from exc
 
     if config["backend"] != "precision-2" and config["device"] != "cloud":
         try:

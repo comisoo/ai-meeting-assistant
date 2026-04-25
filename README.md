@@ -1,13 +1,13 @@
 # AI Meeting Minutes Assistant
 
-An AI-based meeting intelligence tool featuring a lightweight multi-agent workflow, persistent meeting history, and true speaker diarization for audio uploads.
+An AI-based meeting intelligence tool featuring a lightweight multi-agent workflow, persistent meeting history, and a WhisperX-based transcription pipeline with speaker diarization for audio uploads.
 
 ## Architecture
 
 - **Backend**: Python 3.10+, FastAPI, LangGraph, SQLite
 - **Speech Stack**:
-  - `Groq Whisper`: audio transcription with timestamps
-  - `pyannote`: speaker diarization for true speaker segmentation
+  - `WhisperX`: ASR, alignment, and word-level timestamps
+  - `pyannote`: speaker diarization through WhisperX integration
 - **Agents Workflow**:
   - `Cleaner Agent`: normalizes raw bilingual transcripts
   - `Summarizer Agent`: generates structured meeting minutes
@@ -64,17 +64,28 @@ GROQ_API_KEY=your_groq_key
 GROQ_PRIMARY_MODEL=llama-3.1-8b-instant
 GROQ_FALLBACK_MODELS=llama-3.3-70b-versatile
 
-# Speaker diarization options
+# WhisperX transcription and diarization
+WHISPERX_MODEL=small
+# WHISPERX_MODEL_DIR=C:\models\faster-whisper-small
+WHISPERX_DEVICE=auto
+WHISPERX_COMPUTE_TYPE=int8
+WHISPERX_BATCH_SIZE=4
+WHISPERX_THREADS=8
+# WHISPERX_LANGUAGE=en
+WHISPERX_VAD_METHOD=silero
+# WHISPERX_DOWNLOAD_ROOT=C:\models\whisperx-cache
+# WHISPERX_LOCAL_FILES_ONLY=0
+# WHISPERX_ALIGN_MODEL_DIR=C:\models\whisperx-cache
+# WHISPERX_ALIGN_LOCAL_FILES_ONLY=0
+
+# Speaker diarization options for WhisperX
 DIARIZATION_ENABLED=1
 
-# Choose one of the following token paths:
+# WhisperX diarization currently uses the local pyannote community model
 HUGGINGFACE_TOKEN=your_huggingface_token
-# or
-PYANNOTEAI_API_KEY=your_pyannoteai_key
 
 # Optional
 DIARIZATION_BACKEND=community-1
-# DIARIZATION_BACKEND=precision-2
 # DIARIZATION_DEVICE=auto
 # DIARIZATION_NUM_SPEAKERS=2
 # DIARIZATION_MIN_SPEAKERS=2
@@ -82,9 +93,12 @@ DIARIZATION_BACKEND=community-1
 ```
 
 Notes:
-- `community-1` uses local `pyannote.audio` inference and requires a Hugging Face token with access to the model.
-- `precision-2` uses the pyannote hosted backend and requires a pyannoteAI API key.
-- For local diarization, `ffmpeg` and the PyTorch stack must be available in your environment.
+- WhisperX handles transcription, alignment, and speaker-to-word assignment.
+- `community-1` uses local `pyannote.audio` inference through WhisperX and requires a Hugging Face token with access to the model.
+- The backend now loads `backend/.env` by file path, so diarization config still works even if you start the server from the repo root.
+- A working PyTorch stack is required. WhisperX prefers `ffmpeg` for audio decoding, and this backend falls back to `soundfile` when `ffmpeg` is unavailable.
+- If Hugging Face downloads are unstable, you can point `WHISPERX_DOWNLOAD_ROOT` at a local cache directory and later set `WHISPERX_LOCAL_FILES_ONLY=1` after the models have been downloaded once.
+- On CPU, the fastest practical setup is usually `WHISPERX_MODEL=small`, `WHISPERX_COMPUTE_TYPE=int8`, `WHISPERX_VAD_METHOD=silero`, and setting `WHISPERX_LANGUAGE` when you already know the meeting language.
 
 ## API Highlights
 
@@ -96,5 +110,5 @@ Notes:
 ## Notes
 
 - Processed meetings are stored in `backend/meeting_history.db`.
-- Audio uploads are transcribed with timestamps, diarized with pyannote, aligned to speakers, and then passed into the LangGraph workflow as a speaker-aware transcript.
+- Audio uploads are transcribed with WhisperX, aligned to word timestamps, diarized with pyannote, and then passed into the LangGraph workflow as a speaker-aware transcript.
 - The backend now tries `GROQ_PRIMARY_MODEL` first and will fall back to `GROQ_FALLBACK_MODELS` if it hits a Groq rate limit.
