@@ -3,6 +3,9 @@ const API_URL = `${API_BASE_URL}/api/process-audio`;
 const HISTORY_URL = `${API_BASE_URL}/api/meetings`;
 
 const dropZone = document.getElementById("drop-zone");
+const dropBadge = document.getElementById("drop-badge");
+const dropTitle = document.getElementById("drop-title");
+const dropSubtitle = document.getElementById("drop-subtitle");
 const fileInput = document.getElementById("file-input");
 const processBtn = document.getElementById("process-btn");
 const statusSection = document.getElementById("processing-status");
@@ -48,11 +51,9 @@ function updateDropZoneUI() {
         return;
     }
 
-    dropZone.innerHTML = `
-        <div class="icon">Ready</div>
-        <p>${selectedFile.name}</p>
-        <p class="subtitle">Template: ${templateSelect.options[templateSelect.selectedIndex].text}</p>
-    `;
+    dropBadge.textContent = "Ready";
+    dropTitle.textContent = selectedFile.name;
+    dropSubtitle.textContent = `Template: ${templateSelect.options[templateSelect.selectedIndex].text}`;
     processBtn.disabled = false;
 }
 
@@ -90,11 +91,12 @@ function formatDateTime(value) {
 }
 
 function escapeHtml(value) {
-    return (value || "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;");
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
 
 function formatSeconds(value) {
@@ -107,8 +109,18 @@ function formatSeconds(value) {
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+function getCollapseLabels(targetId) {
+    return targetId === "raw-transcript"
+        ? { open: "Hide transcript", closed: "Show transcript" }
+        : { open: "Collapse speaker turns", closed: "Show speaker turns" };
+}
+
+function renderHistoryState(message) {
+    historyList.innerHTML = `<p class="muted state-message">${escapeHtml(message)}</p>`;
+}
+
 async function loadHistory() {
-    historyList.innerHTML = `<p class="muted">Loading saved meetings...</p>`;
+    renderHistoryState("Loading saved meetings...");
 
     try {
         const response = await fetch(`${HISTORY_URL}?limit=12`);
@@ -120,7 +132,7 @@ async function loadHistory() {
         const meetings = payload.meetings || [];
 
         if (meetings.length === 0) {
-            historyList.innerHTML = `<p class="muted">No meetings saved yet.</p>`;
+            renderHistoryState("No meetings saved yet.");
             return;
         }
 
@@ -128,7 +140,7 @@ async function loadHistory() {
             .map(
                 (meeting) => `
                     <article class="history-item">
-                        <button class="history-open" type="button" data-meeting-id="${meeting.id}">
+                        <button class="history-open ${currentMeetingId === String(meeting.id) ? "is-active" : ""}" type="button" data-meeting-id="${meeting.id}">
                             <span class="history-title">${escapeHtml(meeting.filename)}</span>
                             <span class="history-meta">${escapeHtml(meeting.template)} | ${escapeHtml(formatDateTime(meeting.created_at))}</span>
                         </button>
@@ -154,7 +166,7 @@ async function loadHistory() {
             });
         });
     } catch (error) {
-        historyList.innerHTML = `<p class="muted">Unable to load history. ${escapeHtml(error.message)}</p>`;
+        renderHistoryState(`Unable to load history. ${error.message}`);
     }
 }
 
@@ -167,6 +179,7 @@ async function loadMeetingDetail(meetingId) {
         const meeting = await response.json();
         currentMeetingId = String(meeting.id || meetingId);
         renderResults(meeting);
+        loadHistory();
     } catch (error) {
         alert(`Error: ${error.message}`);
     }
@@ -290,17 +303,21 @@ function renderActionItems(actionItems) {
         return `<p class="muted">No specific action items found.</p>`;
     }
 
-    return actionItems
-        .map(
-            (item) => `
-                <article class="action-card">
-                    <h3>${escapeHtml(item.task)}</h3>
-                    <p><strong>Owner:</strong> ${escapeHtml(item.assignee)}</p>
-                    <p><strong>Deadline:</strong> ${escapeHtml(item.deadline)}</p>
-                </article>
-            `
-        )
-        .join("");
+    return `
+        <div class="action-stack scroll-surface">
+            ${actionItems
+                .map(
+                    (item) => `
+                        <article class="action-card">
+                            <h3>${escapeHtml(item.task)}</h3>
+                            <p><strong>Owner:</strong> ${escapeHtml(item.assignee)}</p>
+                            <p><strong>Deadline:</strong> ${escapeHtml(item.deadline)}</p>
+                        </article>
+                    `
+                )
+                .join("")}
+        </div>
+    `;
 }
 
 function renderSpeakerSegments(segments, status) {
@@ -316,19 +333,23 @@ function renderSpeakerSegments(segments, status) {
         return `<p class="muted">${message}</p>`;
     }
 
-    return segments
-        .map(
-            (segment) => `
-                <article class="speaker-card">
-                    <div class="speaker-head">
-                        <p class="speaker-name">${escapeHtml(segment.speaker_label || segment.speaker)}</p>
-                        <span class="history-meta">${escapeHtml(formatSeconds(segment.start))} - ${escapeHtml(formatSeconds(segment.end))}</span>
-                    </div>
-                    <p>${escapeHtml(segment.text)}</p>
-                </article>
-            `
-        )
-        .join("");
+    return `
+        <div class="speaker-list">
+            ${segments
+                .map(
+                    (segment) => `
+                        <article class="speaker-card">
+                            <div class="speaker-head">
+                                <p class="speaker-name">${escapeHtml(segment.speaker_label || segment.speaker)}</p>
+                                <span class="history-meta">${escapeHtml(formatSeconds(segment.start))} - ${escapeHtml(formatSeconds(segment.end))}</span>
+                            </div>
+                            <p>${escapeHtml(segment.text)}</p>
+                        </article>
+                    `
+                )
+                .join("")}
+        </div>
+    `;
 }
 
 function renderResults(data) {
@@ -338,70 +359,117 @@ function renderResults(data) {
     const transcriptText = data.cleaned_transcript || data.speaker_aware_transcript || data.transcript || "";
 
     resultsSection.innerHTML = `
-        <div class="results-grid">
-            <section class="glass-panel result-card wide">
-                <div class="panel-head compact">
-                    <div>
-                        <p class="eyebrow">Summary</p>
-                        <h2>${escapeHtml(data.filename || "Meeting Output")}</h2>
+        <div class="results-layout">
+            <div class="results-primary">
+                <section class="summary-card">
+                    <div class="result-card-head">
+                        <div>
+                            <p class="eyebrow">Summary</p>
+                            <h2>${escapeHtml(data.filename || "Meeting Output")}</h2>
+                        </div>
+                        <span class="history-meta">${escapeHtml(data.template || "general")} | ${escapeHtml(formatDateTime(data.created_at))}</span>
                     </div>
-                    <span class="history-meta">${escapeHtml(data.template || "general")} | ${escapeHtml(formatDateTime(data.created_at))}</span>
+                    <div class="markdown-body scroll-surface">${summaryHTML}</div>
+                </section>
+
+                <section class="result-card">
+                    <div class="result-card-head">
+                        <div>
+                            <p class="eyebrow">Action Items</p>
+                            <h2>Execution Snapshot</h2>
+                        </div>
+                        <span class="history-meta">${escapeHtml((data.action_items || []).length)} items</span>
+                    </div>
+                    <div class="result-card-body">${renderActionItems(data.action_items || [])}</div>
+                </section>
+            </div>
+
+            <section class="result-card">
+                <div class="result-card-head">
+                    <div>
+                        <p class="eyebrow">Follow-up Plan</p>
+                        <h2>Next-step Coordination</h2>
+                    </div>
+                    <span class="history-meta">Generated from summary, action items, and insights</span>
                 </div>
-                <div class="markdown-body">${summaryHTML}</div>
+                <div class="markdown-body scroll-surface">${followUpHTML}</div>
             </section>
 
-            <section class="glass-panel result-card">
-                <p class="eyebrow">Action Items</p>
-                <div class="stack">${renderActionItems(data.action_items || [])}</div>
-            </section>
-
-            <section class="glass-panel result-card">
-                <p class="eyebrow">Meeting Insights</p>
-                <div class="insight-block">
-                    <p><strong>Tone:</strong> ${escapeHtml(insights.meeting_tone || "Unavailable")}</p>
-                    <div>
-                        <strong>Key Decisions</strong>
-                        ${renderList(insights.key_decisions, "No decisions captured.")}
+            <div class="results-secondary">
+                <section class="secondary-card">
+                    <div class="result-card-head">
+                        <div>
+                            <p class="eyebrow">Meeting Insights</p>
+                            <h2>Signals and Decisions</h2>
+                        </div>
+                        <span class="history-meta">Secondary analysis</span>
                     </div>
-                    <div>
-                        <strong>Blockers</strong>
-                        ${renderList(insights.blockers, "No blockers captured.")}
+                    <div class="insight-block scroll-surface">
+                        <article class="insight-cluster">
+                            <p><strong>Tone:</strong> ${escapeHtml(insights.meeting_tone || "Unavailable")}</p>
+                        </article>
+                        <article class="insight-cluster">
+                            <strong>Key Decisions</strong>
+                            ${renderList(insights.key_decisions, "No decisions captured.")}
+                        </article>
+                        <article class="insight-cluster">
+                            <strong>Blockers</strong>
+                            ${renderList(insights.blockers, "No blockers captured.")}
+                        </article>
+                        <article class="insight-cluster">
+                            <strong>Next Focus</strong>
+                            ${renderList(insights.next_focus, "No next-focus items captured.")}
+                        </article>
                     </div>
-                    <div>
-                        <strong>Next Focus</strong>
-                        ${renderList(insights.next_focus, "No next-focus items captured.")}
+                </section>
+
+                <section class="secondary-card">
+                    <div class="result-card-head">
+                        <div>
+                            <p class="eyebrow">Speaker Turns</p>
+                            <h2>Conversation Timeline</h2>
+                        </div>
+                        <span class="history-meta">${escapeHtml(data.diarization_status || "not_available")}</span>
                     </div>
-                </div>
-            </section>
+                    <div class="collapse-shell">
+                        <p class="muted">Diarization: ${escapeHtml(data.diarization_status || "not_available")} (${escapeHtml(data.diarization_backend || "none")})</p>
+                        ${data.diarization_error ? `<p class="muted">Detail: ${escapeHtml(data.diarization_error)}</p>` : ""}
+                        <button class="collapse-btn" type="button" data-collapse-target="speaker-scroll">Collapse speaker turns</button>
+                        <div id="speaker-scroll" class="speaker-scroll scroll-surface">
+                            ${renderSpeakerSegments(data.speaker_segments || [], data.diarization_status)}
+                        </div>
+                    </div>
+                </section>
 
-            <section class="glass-panel result-card wide">
-                <p class="eyebrow">Follow-up Plan</p>
-                <div class="markdown-body">${followUpHTML}</div>
-            </section>
-
-            <section class="glass-panel result-card">
-                <p class="eyebrow">Speaker Turns</p>
-                <p class="muted">Diarization: ${escapeHtml(data.diarization_status || "not_available")} (${escapeHtml(data.diarization_backend || "none")})</p>
-                ${data.diarization_error ? `<p class="muted">Detail: ${escapeHtml(data.diarization_error)}</p>` : ""}
-                <div class="stack">
-                    ${renderSpeakerSegments(data.speaker_segments || [], data.diarization_status)}
-                </div>
-            </section>
-
-            <section class="glass-panel result-card">
-                <p class="eyebrow">Transcript</p>
-                <button id="toggle-transcript-btn" class="secondary-btn" type="button">
-                    Toggle Cleaned Transcript
-                </button>
-                <div id="raw-transcript" class="transcript hidden">${escapeHtml(transcriptText)}</div>
-            </section>
+                <section class="secondary-card secondary-card-wide">
+                    <div class="result-card-head">
+                        <div>
+                            <p class="eyebrow">Transcript</p>
+                            <h2>Cleaned Meeting Transcript</h2>
+                        </div>
+                        <span class="history-meta">Review reference</span>
+                    </div>
+                    <div class="collapse-shell">
+                        <button class="collapse-btn" type="button" data-collapse-target="raw-transcript">Hide transcript</button>
+                        <div id="raw-transcript" class="transcript-panel scroll-surface">${escapeHtml(transcriptText)}</div>
+                    </div>
+                </section>
+            </div>
         </div>
     `;
 
-    const transcriptBtn = document.getElementById("toggle-transcript-btn");
-    const transcriptPanel = document.getElementById("raw-transcript");
-    transcriptBtn.addEventListener("click", () => {
-        transcriptPanel.classList.toggle("hidden");
+    document.querySelectorAll("[data-collapse-target]").forEach((button) => {
+        const targetId = button.dataset.collapseTarget;
+        const target = document.getElementById(targetId);
+        if (!target) {
+            return;
+        }
+
+        button.addEventListener("click", () => {
+            const isCollapsed = target.classList.toggle("is-collapsed");
+            const labels = getCollapseLabels(targetId);
+            button.textContent = isCollapsed ? labels.closed : labels.open;
+        });
     });
 
     resultsSection.classList.remove("hidden");
