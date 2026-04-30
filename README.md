@@ -64,6 +64,16 @@ GROQ_API_KEY=your_groq_key
 GROQ_PRIMARY_MODEL=llama-3.1-8b-instant
 GROQ_FALLBACK_MODELS=llama-3.3-70b-versatile
 
+# Optional: Feishu task sync
+FEISHU_APP_ID=your_feishu_app_id
+FEISHU_APP_SECRET=your_feishu_app_secret
+# FEISHU_BASE_URL=https://open.feishu.cn
+# FEISHU_TASK_ORIGIN_NAME=AI Meeting Minutes Assistant
+# FEISHU_TASK_ORIGIN_URL=http://localhost:8080
+# FEISHU_DEFAULT_OPEN_ID=your_open_id_here
+# FEISHU_DEFAULT_COLLABORATOR_IDS=open_id_1,open_id_2
+# FEISHU_DEFAULT_FOLLOWER_IDS=open_id_1,open_id_2
+
 # WhisperX transcription and diarization
 WHISPERX_MODEL=small
 # WHISPERX_MODEL_DIR=C:\models\faster-whisper-small
@@ -94,6 +104,8 @@ DIARIZATION_BACKEND=community-1
 
 Notes:
 - WhisperX handles transcription, alignment, and speaker-to-word assignment.
+- Feishu sync is implemented as a lightweight post-processing integration. The minimal version creates one Feishu task per extracted action item and does not yet map assignees to real Feishu user IDs.
+- Without user OAuth, the backend does not know the true current Feishu user automatically. The practical minimal workaround is to configure `FEISHU_DEFAULT_OPEN_ID`, which will add that user as both collaborator and follower on created tasks.
 - `community-1` uses local `pyannote.audio` inference through WhisperX and requires a Hugging Face token with access to the model.
 - The backend now loads `backend/.env` by file path, so diarization config still works even if you start the server from the repo root.
 - A working PyTorch stack is required. WhisperX prefers `ffmpeg` for audio decoding, and this backend falls back to `soundfile` when `ffmpeg` is unavailable.
@@ -105,7 +117,17 @@ Notes:
 - `POST /api/process-audio`: process an uploaded audio file or `.txt` transcript
 - `GET /api/meetings`: list recent saved meetings
 - `GET /api/meetings/{id}`: load one saved meeting in full
+- `POST /api/meetings/{id}/sync-feishu`: sync extracted action items to Feishu Tasks
+- `POST /api/feishu/resolve-open-id`: resolve a user's Feishu `open_id` from email or mobile
 - `GET /health`: backend health, storage mode, and diarization mode
+
+Example request for resolving a Feishu `open_id`:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/feishu/resolve-open-id \
+  -H "Content-Type: application/json" \
+  -d "{\"emails\": [\"your_email@example.com\"]}"
+```
 
 ## Notes
 

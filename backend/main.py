@@ -2,15 +2,21 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 import uvicorn
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from app.agents.workflow import app_workflow
 from app.diarization import get_diarization_config, is_diarization_enabled
 from app.env import load_app_env
+from app.integrations.feishu_tasks import (
+    is_feishu_configured,
+    resolve_feishu_open_ids,
+    sync_meeting_action_items_to_feishu,
+)
 from app.storage import delete_meeting, get_meeting, init_db, list_meetings, save_meeting
 from app.transcription import (
     get_whisperx_batch_size,
@@ -50,6 +56,11 @@ app.add_middleware(
 @app.on_event("startup")
 def startup_event():
     init_db()
+
+
+class FeishuResolveRequest(BaseModel):
+    emails: Optional[List[str]] = None
+    mobiles: Optional[List[str]] = None
 
 
 def get_file_suffix(filename: str) -> str:
@@ -130,6 +141,7 @@ def health_check():
         ),
         "workflow_mode": "multi_agent_fanout",
         "history_storage": "sqlite",
+        "feishu_sync_configured": is_feishu_configured(),
         "diarization_enabled": is_diarization_enabled(),
         "diarization_backend": diarization_config["backend"],
         "diarization_model": diarization_config["model"],
@@ -162,6 +174,46 @@ def delete_meeting_detail(meeting_id: int):
     if not deleted:
         raise HTTPException(status_code=404, detail="Meeting not found.")
     return {"deleted": True, "meeting_id": meeting_id}
+
+
+@app.post("/api/meetings/{meeting_id}/sync-feishu")
+def sync_meeting_to_feishu(meeting_id: int):
+    meeting = get_meeting(meeting_id)
+    if meeting is None:
+        raise HTTPException(status_code=404, detail="Meeting not found.")
+
+    try:
+        result = sync_meeting_action_items_to_feishu(meeting)
+    except RuntimeError as exc:
+        detail = str(exc)
+        status_code = 400 if (
+            "not configured" in detail.lower() or "no action items" in detail.lower()
+        ) else 502
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+
+    return {
+        "meeting_id": meeting_id,
+        "filename": meeting.get("filename", ""),
+        **result,
+    }
+
+
+@app.post("/api/feishu/resolve-open-id")
+def resolve_feishu_open_id(request: FeishuResolveRequest):
+    try:
+        users = resolve_feishu_open_ids(
+            emails=request.emails,
+            mobiles=request.mobiles,
+        )
+    except RuntimeError as exc:
+        detail = str(exc)
+        status_code = 400 if "provide at least one" in detail.lower() else 502
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+
+    return {
+        "count": len(users),
+        "users": users,
+    }
 
 
 @app.post("/api/process-audio")

@@ -212,6 +212,24 @@ async function deleteMeeting(meetingId) {
     }
 }
 
+async function syncMeetingToFeishu(meetingId) {
+    try {
+        const response = await fetch(`${HISTORY_URL}/${meetingId}/sync-feishu`, {
+            method: "POST",
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+            throw new Error(payload.detail || "Failed to sync action items to Feishu.");
+        }
+
+        const count = payload.synced_count || 0;
+        alert(`Synced ${count} action item${count === 1 ? "" : "s"} to Feishu.`);
+    } catch (error) {
+        alert(`Error: ${error.message}`);
+    }
+}
+
 processBtn.addEventListener("click", async () => {
     if (!selectedFile) {
         return;
@@ -378,7 +396,10 @@ function renderResults(data) {
                             <p class="eyebrow">Action Items</p>
                             <h2>Execution Snapshot</h2>
                         </div>
-                        <span class="history-meta">${escapeHtml((data.action_items || []).length)} items</span>
+                        <div class="result-card-actions">
+                            <span class="history-meta">${escapeHtml((data.action_items || []).length)} items</span>
+                            ${data.id ? `<button class="secondary-btn" type="button" id="sync-feishu-btn">Sync to Feishu</button>` : ""}
+                        </div>
                     </div>
                     <div class="result-card-body">${renderActionItems(data.action_items || [])}</div>
                 </section>
@@ -471,6 +492,21 @@ function renderResults(data) {
             button.textContent = isCollapsed ? labels.closed : labels.open;
         });
     });
+
+    const syncButton = document.getElementById("sync-feishu-btn");
+    if (syncButton && data.id) {
+        syncButton.addEventListener("click", async () => {
+            syncButton.disabled = true;
+            const originalLabel = syncButton.textContent;
+            syncButton.textContent = "Syncing...";
+            try {
+                await syncMeetingToFeishu(data.id);
+            } finally {
+                syncButton.disabled = false;
+                syncButton.textContent = originalLabel;
+            }
+        });
+    }
 
     resultsSection.classList.remove("hidden");
 }

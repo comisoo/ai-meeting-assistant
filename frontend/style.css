@@ -502,6 +502,14 @@ select {
     margin-bottom: 16px;
 }
 
+.result-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 .result-card-body,
 .insight-block {
     min-height: 0;
@@ -696,6 +704,10 @@ select {
     .speaker-head,
     .panel-head {
         flex-direction: column;
+    }
+
+    .result-card-actions {
+        justify-content: flex-start;
     }
 
     .markdown-body.scroll-surface,
