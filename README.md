@@ -14,7 +14,7 @@ An AI-based meeting intelligence tool featuring a lightweight multi-agent workfl
   - `Action Item Agent`: extracts tasks, owners, and deadlines
   - `Insight Agent`: captures tone, decisions, blockers, and next focus
   - `Follow-up Agent`: drafts the post-meeting follow-up plan
-- **Frontend**: Vanilla HTML/CSS/JS
+- **Frontend**: React + Vite
 
 ## Features
 
@@ -49,11 +49,20 @@ The API will be available at `http://127.0.0.1:8000`.
 ### 2. Frontend
 
 ```bash
-cd frontend
-python -m http.server 8080
+cd frontend-react
+npm install
+npm run dev
 ```
 
-Then visit `http://localhost:8080` in your browser.
+Then open the Vite dev server URL shown in the terminal, typically `http://localhost:5173`.
+
+The legacy `frontend/` directory has been retired and replaced with the maintained Vite React app in `frontend-react/`.
+
+You can optionally create `frontend-react/.env` from `.env.example` and set:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
+```
 
 ## Environment Variables
 
