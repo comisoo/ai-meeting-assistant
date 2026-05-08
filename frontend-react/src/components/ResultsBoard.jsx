@@ -30,6 +30,22 @@ function BulletList({ items, emptyText }) {
   );
 }
 
+function KeywordCloud({ items }) {
+  if (!items?.length) {
+    return <p className="muted">No keyword cloud available.</p>;
+  }
+
+  return (
+    <div className="keyword-cloud">
+      {items.map((item, index) => (
+        <span className="keyword-chip" key={`${item}-${index}`}>
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function ActionItems({ items }) {
   if (!items?.length) {
     return <p className="muted">No specific action items found.</p>;
@@ -46,6 +62,32 @@ function ActionItems({ items }) {
           <p>
             <strong>Deadline:</strong> {item.deadline}
           </p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function SpeakingShare({ items }) {
+  if (!items?.length) {
+    return <p className="muted">No speaker-share data available.</p>;
+  }
+
+  return (
+    <div className="share-stack">
+      {items.map((item, index) => (
+        <article className="share-row" key={`${item.speaker_label}-${index}`}>
+          <div className="share-copy">
+            <strong>{item.speaker_label}</strong>
+            <span className="history-meta">{item.duration_seconds}s spoken</span>
+          </div>
+          <div className="share-meter">
+            <div
+              className="share-meter-fill"
+              style={{ width: `${Math.max(4, item.share_percent || 0)}%` }}
+            ></div>
+          </div>
+          <strong className="share-percent">{item.share_percent}%</strong>
         </article>
       ))}
     </div>
@@ -102,10 +144,37 @@ export function ResultsBoard({ data, onSyncFeishu, isSyncingFeishu }) {
   const insights = data.insights || {};
   const transcriptText =
     data.cleaned_transcript || data.speaker_aware_transcript || data.transcript || "";
+  const actionCount = (data.action_items || []).length;
+  const speakerCount = (data.speaker_segments || []).length;
+  const sentimentScore = Number.isFinite(insights.sentiment_score)
+    ? insights.sentiment_score
+    : 0.5;
+  const efficiencyScore = Number.isFinite(insights.efficiency_score)
+    ? insights.efficiency_score
+    : 0;
 
   return (
     <section className="results-board">
       <div className="results-layout">
+        <section className="result-overview surface-panel">
+          <div className="overview-pill">
+            <span className="overview-label">Template</span>
+            <strong>{data.template || "general"}</strong>
+          </div>
+          <div className="overview-pill">
+            <span className="overview-label">Action Items</span>
+            <strong>{actionCount}</strong>
+          </div>
+          <div className="overview-pill">
+            <span className="overview-label">Speaker Turns</span>
+            <strong>{speakerCount}</strong>
+          </div>
+          <div className="overview-pill">
+            <span className="overview-label">Diarization</span>
+            <strong>{data.diarization_status || "not_available"}</strong>
+          </div>
+        </section>
+
         <div className="results-primary">
           <section className="summary-card">
             <div className="result-card-head">
@@ -127,7 +196,7 @@ export function ResultsBoard({ data, onSyncFeishu, isSyncingFeishu }) {
                 <h2>Execution Snapshot</h2>
               </div>
               <div className="result-card-actions">
-                <span className="history-meta">{(data.action_items || []).length} items</span>
+                <span className="history-meta">{actionCount} items</span>
                 {data.id ? (
                   <button
                     className="secondary-btn"
@@ -164,22 +233,58 @@ export function ResultsBoard({ data, onSyncFeishu, isSyncingFeishu }) {
             <div className="result-card-head">
               <div>
                 <p className="eyebrow">Meeting Insights</p>
-                <h2>Signals and Decisions</h2>
+                <h2>Quality Analysis</h2>
               </div>
               <span className="history-meta">Secondary analysis</span>
             </div>
             <div className="insight-block scroll-surface">
               <article className="insight-cluster">
-                <p>
-                  <strong>Tone:</strong> {insights.meeting_tone || "Unavailable"}
-                </p>
+                <div className="metric-row">
+                  <div>
+                    <strong>Sentiment</strong>
+                    <p className="muted">
+                      {insights.sentiment_label || insights.meeting_tone || "Unavailable"}
+                    </p>
+                  </div>
+                  <span className="metric-pill">{sentimentScore.toFixed(2)}</span>
+                </div>
+                <div className="score-track">
+                  <div
+                    className="score-track-fill"
+                    style={{ width: `${Math.max(6, sentimentScore * 100)}%` }}
+                  ></div>
+                </div>
+              </article>
+              <article className="insight-cluster">
+                <div className="metric-row">
+                  <div>
+                    <strong>Efficiency Score</strong>
+                    <p className="muted">{insights.efficiency_reason || "No explanation available."}</p>
+                  </div>
+                  <span className="metric-pill">{efficiencyScore.toFixed(1)}/10</span>
+                </div>
+                <div className="score-track score-track-wide">
+                  <div
+                    className="score-track-fill score-track-fill-accent"
+                    style={{ width: `${Math.max(6, efficiencyScore * 10)}%` }}
+                  ></div>
+                </div>
+              </article>
+              <article className="insight-cluster">
+                <strong>Speaking Share</strong>
+                <SpeakingShare items={insights.speaking_share} />
+              </article>
+              <article className="insight-cluster">
+                <strong>Keyword Cloud</strong>
+                <KeywordCloud items={insights.keyword_cloud} />
+              </article>
+              <article className="insight-cluster">
+                <strong>Meeting Rhythm</strong>
+                <BulletList items={insights.meeting_rhythm} emptyText="No rhythm notes available." />
               </article>
               <article className="insight-cluster">
                 <strong>Key Decisions</strong>
-                <BulletList
-                  items={insights.key_decisions}
-                  emptyText="No decisions captured."
-                />
+                <BulletList items={insights.key_decisions} emptyText="No decisions captured." />
               </article>
               <article className="insight-cluster">
                 <strong>Blockers</strong>
@@ -187,10 +292,7 @@ export function ResultsBoard({ data, onSyncFeishu, isSyncingFeishu }) {
               </article>
               <article className="insight-cluster">
                 <strong>Next Focus</strong>
-                <BulletList
-                  items={insights.next_focus}
-                  emptyText="No next-focus items captured."
-                />
+                <BulletList items={insights.next_focus} emptyText="No next-focus items captured." />
               </article>
             </div>
           </section>

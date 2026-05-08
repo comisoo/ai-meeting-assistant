@@ -17,6 +17,9 @@ export function UploadWorkspace({
   const subtitle = selectedFile
     ? `Template: ${getTemplateLabel(template)}`
     : "Supported formats: audio files and `.txt` transcripts";
+  const formatHint = selectedFile
+    ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`
+    : "Audio / TXT";
 
   function openFilePicker() {
     inputRef.current?.click();
@@ -74,7 +77,7 @@ export function UploadWorkspace({
           />
         </div>
 
-        <div className="control-row">
+        <div className="workspace-form-grid">
           <div className="field-group">
             <label htmlFor="template-select">Meeting Template</label>
             <select
@@ -87,6 +90,27 @@ export function UploadWorkspace({
               <option value="client">Client Pitch</option>
               <option value="general">General Meeting</option>
             </select>
+          </div>
+
+          <div className="upload-summary-card">
+            <div className="upload-summary-row">
+              <span className="upload-summary-label">Selected</span>
+              <strong>{selectedFile ? "1 file ready" : "Waiting for file"}</strong>
+            </div>
+            <div className="upload-summary-row">
+              <span className="upload-summary-label">Format</span>
+              <strong>{formatHint}</strong>
+            </div>
+            <div className="upload-summary-row">
+              <span className="upload-summary-label">Template</span>
+              <strong>{getTemplateLabel(template)}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="control-row control-row-actions">
+          <div className="upload-note">
+            Structured outputs will include summary, action items, insights, and follow-up.
           </div>
           <button
             className="primary-btn"

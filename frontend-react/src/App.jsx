@@ -43,11 +43,32 @@ export default function App() {
               Turn raw meetings into structured summaries, action items, insights,
               follow-up plans, and reusable session history.
             </p>
+            <div className="hero-pills">
+              <div className="hero-pill">
+                <span className="hero-pill-label">Pipeline</span>
+                <strong>WhisperX + LangGraph</strong>
+              </div>
+              <div className="hero-pill">
+                <span className="hero-pill-label">Records</span>
+                <strong>{history.length} saved meetings</strong>
+              </div>
+              <div className="hero-pill">
+                <span className="hero-pill-label">Current Template</span>
+                <strong>{template}</strong>
+              </div>
+            </div>
           </div>
-          <div className="hero-meta-card">
-            <span className="meta-kicker">Workflow</span>
-            <strong>Transcribe, summarize, extract, review</strong>
-            <p>One workspace for upload, processing, retrieval, and transcript review.</p>
+          <div className="hero-meta-stack">
+            <div className="hero-meta-card">
+              <span className="meta-kicker">Workflow</span>
+              <strong>Transcribe, summarize, extract, review</strong>
+              <p>One workspace for upload, processing, retrieval, and transcript review.</p>
+            </div>
+            <div className="hero-meta-card hero-meta-card-accent">
+              <span className="meta-kicker">Output</span>
+              <strong>Summary, actions, insights, follow-up</strong>
+              <p>Designed for practical meeting minutes rather than plain transcript storage.</p>
+            </div>
           </div>
         </section>
 

@@ -18,7 +18,10 @@ export function ProcessingStatus({ status }) {
           <p className="eyebrow">Pipeline Status</p>
           <h2>Processing</h2>
         </div>
-        <span className="status-note">Live progress</span>
+        <div className="status-progress-meta">
+          <span className="status-note">Live progress</span>
+          <strong>{Math.round(status.progress)}%</strong>
+        </div>
       </div>
       <div className="status-steps">
         {STEP_LABELS.map((label, index) => {

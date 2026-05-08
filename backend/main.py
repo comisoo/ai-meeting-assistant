@@ -262,7 +262,11 @@ async def process_audio(
 
     try:
         workflow_result = app_workflow.invoke(
-            {"transcript": workflow_input, "template": template}
+            {
+                "transcript": workflow_input,
+                "template": template,
+                "speaker_segments": prepared_input.get("speaker_segments", []),
+            }
         )
     except Exception as exc:
         if is_rate_limit_error(exc):

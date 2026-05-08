@@ -22,10 +22,9 @@ export function HistorySidebar({
           type="button"
           onClick={() => onOpenMeeting(meeting.id)}
         >
+          <span className="history-chip">{meeting.template}</span>
           <span className="history-title">{meeting.filename}</span>
-          <span className="history-meta">
-            {meeting.template} | {formatDateTime(meeting.created_at)}
-          </span>
+          <span className="history-meta">{formatDateTime(meeting.created_at)}</span>
         </button>
         <button
           className="history-delete"
@@ -46,6 +45,9 @@ export function HistorySidebar({
           <p className="eyebrow">Meeting History</p>
           <h2>Recent Sessions</h2>
         </div>
+        <span className="count-badge">{meetings.length}</span>
+      </div>
+      <div className="panel-head compact panel-head-inline">
         <button className="secondary-btn" type="button" onClick={onRefresh}>
           Refresh
         </button>
