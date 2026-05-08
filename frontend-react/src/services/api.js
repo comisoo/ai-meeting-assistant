@@ -34,6 +34,17 @@ export async function syncMeetingToFeishu(meetingId) {
   return parseResponse(response, "Failed to sync action items to Feishu.");
 }
 
+export async function askMeetingAssistant(meetingId, question) {
+  const response = await fetch(`${HISTORY_URL}/${meetingId}/assistant`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ question }),
+  });
+  return parseResponse(response, "Failed to get an answer from the meeting assistant.");
+}
+
 export async function processMeetingFile(file, template) {
   const formData = new FormData();
   formData.append("file", file);

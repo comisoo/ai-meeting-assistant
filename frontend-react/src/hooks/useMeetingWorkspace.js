@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  askMeetingAssistant,
   fetchMeetingDetail,
   fetchMeetingHistory,
   processMeetingFile,
@@ -17,6 +18,8 @@ export function useMeetingWorkspace({ notifyError, notifySuccess }) {
   const [results, setResults] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSyncingFeishu, setIsSyncingFeishu] = useState(false);
+  const [assistantMessages, setAssistantMessages] = useState([]);
+  const [isAssistantLoading, setIsAssistantLoading] = useState(false);
 
   const {
     processingStatus,
@@ -51,6 +54,7 @@ export function useMeetingWorkspace({ notifyError, notifySuccess }) {
         const meeting = await fetchMeetingDetail(meetingId);
         setCurrentMeetingId(String(meeting.id || meetingId));
         setResults(meeting);
+        setAssistantMessages([]);
         await loadHistory();
       } catch (error) {
         notifyError("Meeting Load Failed", error.message);
@@ -71,6 +75,7 @@ export function useMeetingWorkspace({ notifyError, notifySuccess }) {
         if (currentMeetingId === String(meetingId)) {
           setCurrentMeetingId(null);
           setResults(null);
+          setAssistantMessages([]);
         }
         await loadHistory();
       } catch (error) {
@@ -103,6 +108,7 @@ export function useMeetingWorkspace({ notifyError, notifySuccess }) {
 
     setIsProcessing(true);
     setResults(null);
+    setAssistantMessages([]);
     beginProgressSimulation();
 
     try {
@@ -128,14 +134,54 @@ export function useMeetingWorkspace({ notifyError, notifySuccess }) {
     template,
   ]);
 
+  const handleAskAssistant = useCallback(
+    async (question) => {
+      const meetingId = results?.id;
+      const normalizedQuestion = String(question || "").trim();
+
+      if (!meetingId || !normalizedQuestion || isAssistantLoading) {
+        return;
+      }
+
+      setIsAssistantLoading(true);
+      setAssistantMessages((messages) => [
+        ...messages,
+        { role: "user", content: normalizedQuestion },
+      ]);
+
+      try {
+        const payload = await askMeetingAssistant(meetingId, normalizedQuestion);
+        setAssistantMessages((messages) => [
+          ...messages,
+          { role: "assistant", content: payload.answer || "No answer returned." },
+        ]);
+      } catch (error) {
+        notifyError("Meeting Assistant Failed", error.message);
+        setAssistantMessages((messages) => [
+          ...messages,
+          {
+            role: "assistant",
+            content: "I couldn't answer that question from the current meeting record.",
+          },
+        ]);
+      } finally {
+        setIsAssistantLoading(false);
+      }
+    },
+    [isAssistantLoading, notifyError, results?.id],
+  );
+
   return {
+    assistantMessages,
     currentMeetingId,
+    handleAskAssistant,
     handleDeleteMeeting,
     handleOpenMeeting,
     handleProcess,
     handleSyncFeishu,
     history,
     historyLoading,
+    isAssistantLoading,
     isProcessing,
     isSyncingFeishu,
     processingStatus,

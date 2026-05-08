@@ -1,4 +1,4 @@
-import { formatDateTime } from "../utils.js";
+import { formatDateTime, getTemplateLabel } from "../utils.js";
 
 export function HistorySidebar({
   meetings,
@@ -13,7 +13,14 @@ export function HistorySidebar({
   if (isLoading) {
     content = <p className="muted state-message">Loading saved meetings...</p>;
   } else if (!meetings.length) {
-    content = <p className="muted state-message">No meetings saved yet.</p>;
+    content = (
+      <div className="state-card">
+        <strong>No saved meetings yet</strong>
+        <p className="muted">
+          Generated meetings will appear here for quick reopen and deletion.
+        </p>
+      </div>
+    );
   } else {
     content = meetings.map((meeting) => (
       <article className="history-item" key={meeting.id}>
@@ -22,9 +29,12 @@ export function HistorySidebar({
           type="button"
           onClick={() => onOpenMeeting(meeting.id)}
         >
-          <span className="history-chip">{meeting.template}</span>
+          <div className="history-item-topline">
+            <span className="history-chip">{getTemplateLabel(meeting.template)}</span>
+          </div>
           <span className="history-title">{meeting.filename}</span>
-          <span className="history-meta">{formatDateTime(meeting.created_at)}</span>
+          <span className="history-subcopy">Structured summary, actions, insights, and follow-up</span>
+          <span className="history-meta history-meta-block">{formatDateTime(meeting.created_at)}</span>
         </button>
         <button
           className="history-delete"
@@ -32,7 +42,7 @@ export function HistorySidebar({
           aria-label="Delete saved meeting"
           onClick={() => onDeleteMeeting(meeting.id)}
         >
-          Delete
+          Remove
         </button>
       </article>
     ));
@@ -43,18 +53,21 @@ export function HistorySidebar({
       <div className="panel-head">
         <div>
           <p className="eyebrow">Meeting History</p>
-          <h2>Recent Sessions</h2>
+          <h2>Saved sessions</h2>
         </div>
         <span className="count-badge">{meetings.length}</span>
       </div>
-      <div className="panel-head compact panel-head-inline">
+
+      <p className="panel-caption">
+        Use the sidebar as a lightweight archive of generated meeting outputs.
+      </p>
+
+      <div className="sidebar-actions">
         <button className="secondary-btn" type="button" onClick={onRefresh}>
-          Refresh
+          Refresh history
         </button>
       </div>
-      <p className="panel-caption">
-        Open or delete saved meeting records without leaving the workspace.
-      </p>
+
       <div className="history-list scroll-surface">{content}</div>
     </aside>
   );

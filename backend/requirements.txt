@@ -10,3 +10,4 @@ pydantic
 python-dotenv
 python-multipart
 soundfile
+jieba

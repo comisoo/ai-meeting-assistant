@@ -1,6 +1,15 @@
 import { useRef, useState } from "react";
 import { getTemplateLabel } from "../utils.js";
 
+function getFileFormatSummary(file) {
+  if (!file) {
+    return "Audio / TXT";
+  }
+
+  const extension = file.name?.split(".").pop()?.toUpperCase();
+  return extension || file.type || "Unknown";
+}
+
 export function UploadWorkspace({
   selectedFile,
   template,
@@ -12,14 +21,12 @@ export function UploadWorkspace({
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const title = selectedFile ? selectedFile.name : "Drag and drop a meeting file";
-  const badge = selectedFile ? "Ready" : "Upload";
+  const title = selectedFile ? selectedFile.name : "Drop a meeting file or click to browse";
+  const badge = selectedFile ? "File ready" : "Upload input";
   const subtitle = selectedFile
-    ? `Template: ${getTemplateLabel(template)}`
-    : "Supported formats: audio files and `.txt` transcripts";
-  const formatHint = selectedFile
-    ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`
-    : "Audio / TXT";
+    ? "The selected file will be cleaned, summarized, analyzed, and stored in history."
+    : "Supported formats include meeting audio and plain .txt transcripts.";
+  const fileSize = selectedFile ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB` : "Not provided";
 
   function openFilePicker() {
     inputRef.current?.click();
@@ -44,11 +51,14 @@ export function UploadWorkspace({
   return (
     <section className="workspace-toolbar surface-panel">
       <div className="toolbar-copy">
-        <p className="eyebrow">Input Workspace</p>
-        <h2>Upload and Generate</h2>
+        <div>
+          <p className="eyebrow">New Meeting</p>
+          <h2>Upload input and generate minutes</h2>
+        </div>
         <p className="panel-caption">
-          Upload meeting audio or a <code>.txt</code> transcript, choose the most suitable
-          template, and generate structured notes.
+          Use the control panel to prepare a new meeting record. The generated
+          output will prioritize summary, action items, quality insights, and
+          follow-up guidance.
         </p>
       </div>
 
@@ -68,6 +78,9 @@ export function UploadWorkspace({
             <p className="drop-title">{title}</p>
             <p className="subtitle">{subtitle}</p>
           </div>
+          <button className="secondary-btn drop-action" type="button">
+            Choose file
+          </button>
           <input
             ref={inputRef}
             type="file"
@@ -78,7 +91,7 @@ export function UploadWorkspace({
         </div>
 
         <div className="workspace-form-grid">
-          <div className="field-group">
+          <div className="field-group surface-subpanel">
             <label htmlFor="template-select">Meeting Template</label>
             <select
               id="template-select"
@@ -90,27 +103,46 @@ export function UploadWorkspace({
               <option value="client">Client Pitch</option>
               <option value="general">General Meeting</option>
             </select>
+            <p className="field-helper">
+              The template shapes summary structure, action extraction, and
+              follow-up emphasis.
+            </p>
           </div>
 
           <div className="upload-summary-card">
-            <div className="upload-summary-row">
-              <span className="upload-summary-label">Selected</span>
-              <strong>{selectedFile ? "1 file ready" : "Waiting for file"}</strong>
+            <div className="upload-summary-topline">
+              <p className="eyebrow">Current File</p>
+              <span className={`status-chip ${selectedFile ? "status-chip-ready" : ""}`}>
+                {selectedFile ? "Ready to process" : "Waiting for upload"}
+              </span>
             </div>
-            <div className="upload-summary-row">
-              <span className="upload-summary-label">Format</span>
-              <strong>{formatHint}</strong>
-            </div>
-            <div className="upload-summary-row">
-              <span className="upload-summary-label">Template</span>
-              <strong>{getTemplateLabel(template)}</strong>
+
+            <div className="upload-summary-grid">
+              <div className="upload-summary-row">
+                <span className="upload-summary-label">Name</span>
+                <strong>{selectedFile?.name || "No file selected"}</strong>
+              </div>
+              <div className="upload-summary-row">
+                <span className="upload-summary-label">Format</span>
+                <strong>{getFileFormatSummary(selectedFile)}</strong>
+              </div>
+              <div className="upload-summary-row">
+                <span className="upload-summary-label">Size</span>
+                <strong>{fileSize}</strong>
+              </div>
+              <div className="upload-summary-row">
+                <span className="upload-summary-label">Template</span>
+                <strong>{getTemplateLabel(template)}</strong>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="control-row control-row-actions">
           <div className="upload-note">
-            Structured outputs will include summary, action items, insights, and follow-up.
+            Output package: <strong>Summary</strong>, <strong>Action Items</strong>,
+            <strong> Meeting Insights</strong>, <strong>Follow-up Plan</strong>, and
+            evidence panels for transcript review.
           </div>
           <button
             className="primary-btn"
@@ -118,7 +150,7 @@ export function UploadWorkspace({
             disabled={!selectedFile || isProcessing}
             onClick={onProcess}
           >
-            {isProcessing ? "Generating..." : "Generate Minutes"}
+            {isProcessing ? "Generating output..." : "Generate meeting output"}
           </button>
         </div>
       </div>

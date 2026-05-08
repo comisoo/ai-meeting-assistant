@@ -9,7 +9,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app.agents.workflow import app_workflow
+from app.agents.workflow import answer_meeting_question, app_workflow
 from app.diarization import get_diarization_config, is_diarization_enabled
 from app.env import load_app_env
 from app.integrations.feishu_tasks import (
@@ -61,6 +61,10 @@ def startup_event():
 class FeishuResolveRequest(BaseModel):
     emails: Optional[List[str]] = None
     mobiles: Optional[List[str]] = None
+
+
+class MeetingQuestionRequest(BaseModel):
+    question: str
 
 
 def get_file_suffix(filename: str) -> str:
@@ -201,6 +205,38 @@ def sync_meeting_to_feishu(meeting_id: int):
         "meeting_id": meeting_id,
         "filename": meeting.get("filename", ""),
         **result,
+    }
+
+
+@app.post("/api/meetings/{meeting_id}/assistant")
+def ask_meeting_assistant(meeting_id: int, request: MeetingQuestionRequest):
+    meeting = get_meeting(meeting_id)
+    if meeting is None:
+        raise HTTPException(status_code=404, detail="Meeting not found.")
+
+    question = (request.question or "").strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Question cannot be empty.")
+
+    try:
+        answer = answer_meeting_question(meeting, question)
+    except Exception as exc:
+        if is_rate_limit_error(exc):
+            raise HTTPException(
+                status_code=429,
+                detail=f"MiniMax rate limit reached while answering the meeting question. Details: {exc}",
+            ) from exc
+        if is_minimax_balance_error(exc):
+            raise HTTPException(
+                status_code=429,
+                detail=f"MiniMax balance is insufficient for meeting Q&A. Details: {exc}",
+            ) from exc
+        raise HTTPException(status_code=500, detail=f"Meeting assistant failed: {exc}") from exc
+
+    return {
+        "meeting_id": meeting_id,
+        "question": question,
+        "answer": answer,
     }
 
 
