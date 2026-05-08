@@ -6,6 +6,7 @@ import { MeetingAssistantPanel } from "./components/MeetingAssistantPanel.jsx";
 import { ToastStack } from "./components/ToastStack.jsx";
 import { useMeetingWorkspace } from "./hooks/useMeetingWorkspace.js";
 import { useToast } from "./hooks/useToast.js";
+import { getTemplateLabel } from "./utils.js";
 
 const CAPABILITY_BADGES = [
   "Speaker-aware",
@@ -66,7 +67,7 @@ export default function App() {
           <div className="header-status-board">
             <article className="status-kpi-card">
               <span className="status-kpi-label">Current Template</span>
-              <strong>{template}</strong>
+              <strong>{getTemplateLabel(template)}</strong>
               <p>Template-sensitive summarization and action extraction.</p>
             </article>
             <article className="status-kpi-card">

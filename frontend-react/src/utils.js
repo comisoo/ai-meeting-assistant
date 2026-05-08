@@ -22,12 +22,41 @@ export function formatSeconds(value) {
 
 export function getTemplateLabel(template) {
   const templateLabels = {
+    academic: "Academic / Research Meeting",
     daily: "Agile Daily Stand-up",
     brainstorm: "Brainstorming Session",
     client: "Client Pitch",
     general: "General Meeting",
   };
   return templateLabels[template] || "General Meeting";
+}
+
+export function isAcademicTemplate(template) {
+  return template === "academic";
+}
+
+export function getAcademicSurfaceLabels(template) {
+  if (template === "academic") {
+    return {
+      summaryEyebrow: "Research Summary",
+      summaryTitle: "Research Discussion Brief",
+      actionEyebrow: "Research Action Items",
+      actionTitle: "Experiment & Task Snapshot",
+      followupEyebrow: "Research Follow-up",
+      followupTitle: "Next Research Checkpoints",
+      insightTag: "Research-focused diagnostics",
+    };
+  }
+
+  return {
+    summaryEyebrow: "Summary",
+    summaryTitle: null,
+    actionEyebrow: "Action Items",
+    actionTitle: "Execution Snapshot",
+    followupEyebrow: "Follow-up Plan",
+    followupTitle: "Next-step coordination",
+    insightTag: "Multi-dimensional diagnostics",
+  };
 }
 
 export function getSpeakerStatusMessage(status) {
@@ -112,7 +141,7 @@ export function buildMeetingExportText(data) {
   const actionItems = listOrFallback(
     data?.action_items,
     (item, index) =>
-      `${index + 1}. ${item.task}\n   Owner: ${item.assignee}\n   Deadline: ${item.deadline}`,
+      `${index + 1}. ${item.task}\n   Category: ${item.category || "General"}\n   Owner: ${item.assignee}\n   Deadline: ${item.deadline}`,
   );
 
   const speakingShare = listOrFallback(

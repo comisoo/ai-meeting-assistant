@@ -9,7 +9,8 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app.agents.workflow import answer_meeting_question, app_workflow
+from app.agents.meeting_qa_agent import answer_meeting_question
+from app.agents.workflow import app_workflow
 from app.diarization import get_diarization_config, is_diarization_enabled
 from app.env import load_app_env
 from app.integrations.feishu_tasks import (

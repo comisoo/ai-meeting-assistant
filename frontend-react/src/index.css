@@ -1244,10 +1244,30 @@ select {
   gap: 10px;
 }
 
+.action-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .action-card h3 {
   margin: 0;
   font-size: 1rem;
   font-weight: 800;
+}
+
+.action-category-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(31, 111, 235, 0.1);
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .action-card-meta {
@@ -1318,6 +1338,11 @@ select {
   margin: 16px 0 0;
   color: var(--text-secondary);
   line-height: 1.7;
+}
+
+.summary-context-note {
+  margin: 8px 0 0;
+  max-width: 56ch;
 }
 
 .insight-diagnostic-grid,
@@ -1693,6 +1718,7 @@ select {
   .result-card-actions,
   .upload-summary-topline,
   .history-item-topline,
+  .action-card-heading,
   .speaker-head,
   .metric-row,
   .panel-head {

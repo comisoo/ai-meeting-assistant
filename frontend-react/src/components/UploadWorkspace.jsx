@@ -98,6 +98,7 @@ export function UploadWorkspace({
               value={template}
               onChange={(event) => onTemplateChange(event.target.value)}
             >
+              <option value="academic">Academic / Research Meeting</option>
               <option value="daily">Agile Daily Stand-up</option>
               <option value="brainstorm">Brainstorming Session</option>
               <option value="client">Client Pitch</option>

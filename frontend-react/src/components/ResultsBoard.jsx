@@ -6,10 +6,12 @@ import {
   formatSeconds,
   formatParticipationBalance,
   formatSentimentLabel,
+  getAcademicSurfaceLabels,
   getCollapseLabels,
   getEfficiencyDescriptor,
   getSpeakerStatusMessage,
   getTemplateLabel,
+  isAcademicTemplate,
 } from "../utils.js";
 
 function MarkdownBlock({ value, className = "markdown-body scroll-surface" }) {
@@ -62,7 +64,10 @@ function ActionItems({ items }) {
         <article className="action-card" key={`${item.task}-${index}`}>
           <div className="action-card-strip"></div>
           <div className="action-card-copy">
-            <h3>{item.task}</h3>
+            <div className="action-card-heading">
+              <h3>{item.task}</h3>
+              {item.category ? <span className="action-category-chip">{item.category}</span> : null}
+            </div>
             <div className="action-card-meta">
               <span>
                 <strong>Owner:</strong> {item.assignee}
@@ -260,6 +265,9 @@ export function ResultsBoard({ data, isProcessing, onSyncFeishu, isSyncingFeishu
   const efficiencyLabel = getEfficiencyDescriptor(efficiencyScore);
   const participationBalance = formatParticipationBalance(insights.participation_balance);
   const topSpeaker = insights.speaking_share?.[0]?.speaker_label || "Unavailable";
+  const template = data.template || "general";
+  const labels = getAcademicSurfaceLabels(template);
+  const isAcademic = isAcademicTemplate(template);
 
   function handleExportText() {
     const exportText = buildMeetingExportText(data);
@@ -304,14 +312,19 @@ export function ResultsBoard({ data, isProcessing, onSyncFeishu, isSyncingFeishu
         <section className="summary-card summary-card-primary">
           <div className="result-card-head">
             <div>
-              <p className="eyebrow">Summary</p>
-              <h2>{data.filename || "Meeting Output"}</h2>
+              <p className="eyebrow">{labels.summaryEyebrow}</p>
+              <h2>{labels.summaryTitle || data.filename || "Meeting Output"}</h2>
+              {isAcademic ? (
+                <p className="muted summary-context-note">
+                  Structured for research goals, experiment updates, findings, and next research steps.
+                </p>
+              ) : null}
             </div>
             <div className="summary-head-meta">
               <button className="secondary-btn" type="button" onClick={handleExportText}>
                 Export .txt
               </button>
-              <span className="summary-meta-pill">{getTemplateLabel(data.template || "general")}</span>
+              <span className="summary-meta-pill">{getTemplateLabel(template)}</span>
               <span className="history-meta">{formatDateTime(data.created_at)}</span>
             </div>
           </div>
@@ -322,8 +335,8 @@ export function ResultsBoard({ data, isProcessing, onSyncFeishu, isSyncingFeishu
           <section className="result-card action-card-panel">
             <div className="result-card-head">
               <div>
-                <p className="eyebrow">Action Items</p>
-                <h2>Execution Snapshot</h2>
+                <p className="eyebrow">{labels.actionEyebrow}</p>
+                <h2>{labels.actionTitle}</h2>
               </div>
               <div className="result-card-actions">
                 <span className="history-meta">{actionCount} items</span>
@@ -350,7 +363,7 @@ export function ResultsBoard({ data, isProcessing, onSyncFeishu, isSyncingFeishu
                 <p className="eyebrow">Meeting Insights</p>
                 <h2>Quality Analysis</h2>
               </div>
-              <span className="history-meta">Multi-dimensional diagnostics</span>
+              <span className="history-meta">{labels.insightTag}</span>
             </div>
 
             <div className="insight-block scroll-surface">
@@ -464,8 +477,8 @@ export function ResultsBoard({ data, isProcessing, onSyncFeishu, isSyncingFeishu
         <section className="result-card follow-up-panel">
           <div className="result-card-head">
             <div>
-              <p className="eyebrow">Follow-up Plan</p>
-              <h2>Next-step coordination</h2>
+              <p className="eyebrow">{labels.followupEyebrow}</p>
+              <h2>{labels.followupTitle}</h2>
             </div>
             <span className="history-meta">
               Derived from summary, action items, and insights
