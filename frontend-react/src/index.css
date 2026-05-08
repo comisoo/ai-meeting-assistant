@@ -111,20 +111,38 @@ code {
   color: var(--text-muted);
   line-height: 1.55;
   font-size: 0.9rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 220px;
+  overflow: auto;
 }
 
+.toast-actions {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.toast-copy-btn,
 .toast-dismiss {
-  width: 30px;
-  height: 30px;
+  min-width: 42px;
+  min-height: 30px;
+  padding: 0 10px;
   border: 0;
   border-radius: 999px;
-  background: transparent;
+  background: rgba(15, 23, 42, 0.05);
   color: var(--text-muted);
   cursor: pointer;
 }
 
+.toast-copy-btn:hover,
 .toast-dismiss:hover {
-  background: rgba(15, 23, 42, 0.06);
+  background: rgba(15, 23, 42, 0.1);
+}
+
+.toast-copy-btn {
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .toast-success {

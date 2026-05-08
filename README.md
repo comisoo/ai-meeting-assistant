@@ -69,9 +69,10 @@ VITE_API_BASE_URL=http://localhost:8000
 Add these to `backend/.env`:
 
 ```env
-GROQ_API_KEY=your_groq_key
-GROQ_PRIMARY_MODEL=llama-3.1-8b-instant
-GROQ_FALLBACK_MODELS=llama-3.3-70b-versatile
+MINIMAX_API_KEY=your_minimax_api_key
+MINIMAX_BASE_URL=https://api.minimax.io/v1
+MINIMAX_PRIMARY_MODEL=MiniMax-M2.7
+MINIMAX_FALLBACK_MODELS=MiniMax-M2.7-highspeed,MiniMax-M2.5,MiniMax-M2.5-highspeed
 
 # Optional: Feishu task sync
 FEISHU_APP_ID=your_feishu_app_id
@@ -142,4 +143,4 @@ curl -X POST http://127.0.0.1:8000/api/feishu/resolve-open-id \
 
 - Processed meetings are stored in `backend/meeting_history.db`.
 - Audio uploads are transcribed with WhisperX, aligned to word timestamps, diarized with pyannote, and then passed into the LangGraph workflow as a speaker-aware transcript.
-- The backend now tries `GROQ_PRIMARY_MODEL` first and will fall back to `GROQ_FALLBACK_MODELS` if it hits a Groq rate limit.
+- The backend now tries `MINIMAX_PRIMARY_MODEL` first and will fall back to `MINIMAX_FALLBACK_MODELS` if it hits a MiniMax rate limit.

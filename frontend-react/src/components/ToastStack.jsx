@@ -1,3 +1,10 @@
+function copyToastMessage(title, message) {
+  const content = `${title}\n${message || ""}`.trim();
+  if (navigator?.clipboard?.writeText) {
+    navigator.clipboard.writeText(content).catch(() => {});
+  }
+}
+
 export function ToastStack({ toasts, onDismiss }) {
   if (!toasts.length) {
     return null;
@@ -11,14 +18,23 @@ export function ToastStack({ toasts, onDismiss }) {
             <strong>{toast.title}</strong>
             <p>{toast.message}</p>
           </div>
-          <button
-            className="toast-dismiss"
-            type="button"
-            aria-label="Dismiss notification"
-            onClick={() => onDismiss(toast.id)}
-          >
-            ×
-          </button>
+          <div className="toast-actions">
+            <button
+              className="toast-copy-btn"
+              type="button"
+              onClick={() => copyToastMessage(toast.title, toast.message)}
+            >
+              Copy
+            </button>
+            <button
+              className="toast-dismiss"
+              type="button"
+              aria-label="Dismiss notification"
+              onClick={() => onDismiss(toast.id)}
+            >
+              ×
+            </button>
+          </div>
         </article>
       ))}
     </section>

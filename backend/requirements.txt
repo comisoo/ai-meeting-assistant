@@ -2,8 +2,8 @@ fastapi
 uvicorn
 langgraph
 langchain
-langchain-groq
-groq
+langchain-openai
+openai
 whisperx
 pyannote.audio
 pydantic

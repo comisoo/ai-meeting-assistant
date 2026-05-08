@@ -14,15 +14,19 @@ from collections import Counter
 from typing import Dict, List, Optional, Type, TypedDict
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
 
 
-DEFAULT_PRIMARY_MODEL = os.environ.get("GROQ_PRIMARY_MODEL", "llama-3.1-8b-instant")
+DEFAULT_BASE_URL = os.environ.get("MINIMAX_BASE_URL", "https://api.minimax.io/v1")
+DEFAULT_PRIMARY_MODEL = os.environ.get("MINIMAX_PRIMARY_MODEL", "MiniMax-M2.7")
 DEFAULT_FALLBACK_MODELS = [
     model.strip()
-    for model in os.environ.get("GROQ_FALLBACK_MODELS", "llama-3.3-70b-versatile").split(",")
+    for model in os.environ.get(
+        "MINIMAX_FALLBACK_MODELS",
+        "MiniMax-M2.7-highspeed,MiniMax-M2.5,MiniMax-M2.5-highspeed",
+    ).split(",")
     if model.strip()
 ]
 
@@ -226,7 +230,16 @@ def get_model_candidates() -> List[str]:
 
 
 def create_llm(model_name: str, structured_schema: Optional[Type[BaseModel]] = None):
-    llm = ChatGroq(model=model_name, temperature=0.2)
+    api_key = os.environ.get("MINIMAX_API_KEY", "").strip()
+    if not api_key or api_key == "your_minimax_api_key_here":
+        raise RuntimeError("MINIMAX_API_KEY is missing or invalid.")
+
+    llm = ChatOpenAI(
+        model=model_name,
+        api_key=api_key,
+        base_url=os.environ.get("MINIMAX_BASE_URL", DEFAULT_BASE_URL).strip() or DEFAULT_BASE_URL,
+        temperature=1.0,
+    )
     if structured_schema is not None:
         return llm.with_structured_output(structured_schema)
     return llm
@@ -251,7 +264,7 @@ def invoke_with_model_fallback(messages, structured_schema: Optional[Type[BaseMo
 
     if last_exception is not None:
         raise last_exception
-    raise RuntimeError("No Groq model candidates were configured.")
+    raise RuntimeError("No MiniMax model candidates were configured.")
 
 
 def model_to_dict(model: BaseModel) -> dict:

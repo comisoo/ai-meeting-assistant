@@ -14,14 +14,16 @@ export function useToast() {
   }, []);
 
   const pushToast = useCallback(
-    ({ title, message, tone = "info", duration = 3600 }) => {
+    ({ title, message, tone = "info", duration = 3600, persistent = false }) => {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      setToasts((items) => [...items, { id, title, message, tone }]);
+      setToasts((items) => [...items, { id, title, message, tone, persistent }]);
 
-      const timer = window.setTimeout(() => {
-        removeToast(id);
-      }, duration);
-      timersRef.current.set(id, timer);
+      if (!persistent) {
+        const timer = window.setTimeout(() => {
+          removeToast(id);
+        }, duration);
+        timersRef.current.set(id, timer);
+      }
     },
     [removeToast],
   );
@@ -32,7 +34,13 @@ export function useToast() {
   );
 
   const notifyError = useCallback(
-    (title, message) => pushToast({ title, message, tone: "error", duration: 4800 }),
+    (title, message) =>
+      pushToast({
+        title,
+        message,
+        tone: "error",
+        persistent: true,
+      }),
     [pushToast],
   );
 

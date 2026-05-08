@@ -30,17 +30,17 @@ from app.transcription import (
 
 load_app_env()
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY")
 SUPPORTED_AUDIO_SUFFIXES = {".mp3", ".m4a", ".wav", ".webm", ".mp4", ".ogg"}
 SUPPORTED_TEXT_SUFFIXES = {".txt"}
 
-if not GROQ_API_KEY or GROQ_API_KEY == "your_groq_api_key_here":
-    print("WARNING: GROQ_API_KEY is missing or invalid in .env")
+if not MINIMAX_API_KEY or MINIMAX_API_KEY == "your_minimax_api_key_here":
+    print("WARNING: MINIMAX_API_KEY is missing or invalid in .env")
 
 
 app = FastAPI(
     title="AI Meeting Minutes Assistant",
-    description="Backend API for processing meeting transcripts using WhisperX, Groq, pyannote, and LangGraph",
+    description="Backend API for processing meeting transcripts using WhisperX, MiniMax, pyannote, and LangGraph",
     version="1.4.0",
 )
 
@@ -70,6 +70,11 @@ def get_file_suffix(filename: str) -> str:
 def is_rate_limit_error(exc: Exception) -> bool:
     message = str(exc).lower()
     return "rate limit" in message or "rate_limit_exceeded" in message or "error code: 429" in message
+
+
+def is_minimax_balance_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return "insufficient_balance_error" in message or "insufficient balance" in message or "1008" in message
 
 
 def save_upload_to_temp(file: UploadFile) -> str:
@@ -127,7 +132,7 @@ def build_meeting_payload(
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to AI Meeting Minutes Assistant API (Powered by Groq)"}
+    return {"message": "Welcome to AI Meeting Minutes Assistant API (Powered by MiniMax)"}
 
 
 @app.get("/health")
@@ -136,8 +141,9 @@ def health_check():
     transcription_device = get_whisperx_device()
     return {
         "status": "healthy",
-        "groq_key_configured": bool(
-            GROQ_API_KEY and GROQ_API_KEY != "your_groq_api_key_here"
+        "llm_provider": "minimax",
+        "minimax_key_configured": bool(
+            MINIMAX_API_KEY and MINIMAX_API_KEY != "your_minimax_api_key_here"
         ),
         "workflow_mode": "multi_agent_fanout",
         "history_storage": "sqlite",
@@ -273,7 +279,15 @@ async def process_audio(
             raise HTTPException(
                 status_code=429,
                 detail=(
-                    "Groq rate limit reached while generating meeting outputs. "
+                    "MiniMax rate limit reached while generating meeting outputs. "
+                    f"Details: {exc}"
+                ),
+            ) from exc
+        if is_minimax_balance_error(exc):
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    "MiniMax balance is insufficient for generating meeting outputs. "
                     f"Details: {exc}"
                 ),
             ) from exc
